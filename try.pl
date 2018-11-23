@@ -20,15 +20,15 @@ time(0).
 %maxmapwidth(12).
 %lookradius(3).
 %%Load Map Tiles X = Baris Y = Kolom
-print_map(12,12) :- nl,!.
-print_map(X,12) :- !, nl , NextRow is X+1, print_map(NextRow,0).
-print_map(X,Y) :- player_position(X,Y), ! , write(' P '),NextCol is Y + 1,print_map(X, NextCol).
+print_map(12,12) :- nl,nl,!.
+print_map(X,12) :- !, nl , nl,  NextRow is X+1, print_map(NextRow,0).
+%print_map(X,Y) :- player_position(X,Y), ! , write('  P  '),NextCol is Y + 1,print_map(X, NextCol).
 print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1, print_map(X, NextCol).
 
-print_tile(Row,Col,_) :- player_position(Row,Col),write(' P ').
-print_tile(_,_,X) :- (  X == 'X', write(' X ');
-                    X == 'O', write(' - ')
-                 ).
+print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
+print_tile(_,_,X) :- (  X == 'X'-> write('  X  ');
+                        write('  -  ')
+                     ). 
 
 load_map(_,_,[]) :- !.
 load_map(X,Y,[Head|Tail]) :- assertz(tile(X,Y,Head)), Y1 is Y + 1, load_map(X,Y1,Tail), ! .
@@ -94,15 +94,16 @@ look :- player_position(Row,Col),
         B is Row+1,
         C is Col-1,
         D is Col+1,
-        tile(A,C,Tile),print_tile(A,C,Tile),
-        tile(A,Col,Tile),print_tile(A,Col,Tile),
-        tile(A,D,Tile),print_tile(A,D,Tile),nl,
-        tile(Row,C,Tile),print_tile(Row,C,Tile),
-        tile(Row,Col,Tile),print_tile(Row, Col, Tile),
-        tile(Row,D,Tile),print_tile(Row, D, Tile),nl,
-        tile(B,C,Tile),print_tile(B, C, Tile),
-        tile(B,Col,Tile),print_tile(B, Col, Tile),
-        tile(B,D,Tile),print_tile(B, D, Tile),nl.
+        nl,
+        tile(A,C,Tile1),print_tile(A,C,Tile1),
+        tile(A,Col,Tile2),print_tile(A,Col,Tile2),
+        tile(A,D,Tile3),print_tile(A,D,Tile3),nl,nl,
+        tile(Row,C,Tile4),print_tile(Row,C,Tile4),
+        tile(Row,Col,Tile5),print_tile(Row, Col, Tile5),
+        tile(Row,D,Tile6),print_tile(Row, D, Tile6),nl,nl,
+        tile(B,C,Tile7),print_tile(B, C, Tile7),
+        tile(B,Col,Tile8),print_tile(B, Col, Tile8),
+        tile(B,D,Tile9),print_tile(B, D, Tile9),nl,nl,!.
 
 start :-    load_map,
             init_player,
