@@ -2,8 +2,12 @@
 
 /*MAP*/
 :- dynamic(tile/3). %%tile berisi koordinat point(X,Y) dan isi tilenya
+
 /*PLAYER*/
 :- dynamic(player_position/2).
+:- dynamic(enemy_position/2).
+:- dynamic(item_details/3). %Koordinat baris kolom, nama item
+
 /*DETAILS*/ %%nyawa,duit,waktu,dan lain lain
 :- dynamic(time/1).
 
@@ -16,19 +20,57 @@
 
 /*WAKTU*/ %%buat set safezone entar
 time(0).
-%maxmapheight(12).
-%maxmapwidth(12).
-%lookradius(3).
+
+/*ITEM YANG ADA PADA GAME */
+%Weapon
+item(m416,weapon).
+item(scar,weapon).
+item(akm,weapon).
+item(ump9,weapon).
+item(shotgun,weapon).
+item(sks,weapon).
+item(pistol,weapon).
+item(sniper,weapon).
+item(bazooka,weapon).
+item(panci,weapon).
+item(kutang,armor).
+item(kevlarlvl1,armor).
+item(kevlarlvl2,armor).
+item(kevlarlvl3,armor).
+item(ganja,medicine).
+item(ammopack,ammo).
+
+
+ammo(m416,7).
+ammo(scar,7).
+ammo(akm,7).
+ammo(ump9,5).
+ammo(shotgun,5).
+ammo(sks,8).
+ammo(pistol,10).
+ammo(sniper,3).
+ammo(bazooka,1).
+ammo(panci,0).
+
+
+
 %%Load Map Tiles X = Baris Y = Kolom
 print_map(12,12) :- nl,nl,!.
 print_map(X,12) :- !, nl , nl,  NextRow is X+1, print_map(NextRow,0).
 %print_map(X,Y) :- player_position(X,Y), ! , write('  P  '),NextCol is Y + 1,print_map(X, NextCol).
 print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1, print_map(X, NextCol).
 
+print_tile(_,_,X) :- X == 'X', ! ,  write('  X  ').
 print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
-print_tile(_,_,X) :- (  X == 'X'-> write('  X  ');
-                        write('  -  ')
-                     ). 
+print_tile(Row,Col,_) :- enemy_position(Row,Col), ! , write('  E  ').
+print_tile(Row,Col,_) :- (  item_details(Row,Col,Item) ->   
+                                (   item(Item,weapon) -> write('  W  ');
+                                    item(Item,armor) -> write('  A  ');
+                                    item(Item,medicine) -> write('  M  ');
+                                    item(Item,ammo) -> write('  O  ')
+                                );
+                            write('  -  ')
+                         ). 
 
 load_map(_,_,[]) :- !.
 load_map(X,Y,[Head|Tail]) :- assertz(tile(X,Y,Head)), Y1 is Y + 1, load_map(X,Y1,Tail), ! .
@@ -74,7 +116,6 @@ update_limit_dead_zone(Row,Col,Res) :- Col == Res, retract(tile(Row,Col,_)),asse
 update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Col == Temp, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
 update_limit_dead_zone :- !.
 
-init_player :- assertz(player_position(5,5)).
 
 move_player(Direction) :-   Direction == 'n' -> !, player_position(Row,Col), Row1 is Row-1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)).
 move_player(Direction) :-   Direction == 's' -> !, player_position(Row,Col), Row1 is Row+1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)).
@@ -105,6 +146,17 @@ look :- player_position(Row,Col),
         tile(B,Col,Tile8),print_tile(B, Col, Tile8),
         tile(B,D,Tile9),print_tile(B, D, Tile9),nl,nl,!.
 
+
+
+/*INISIALISASI*/
+init_player :-  assertz(player_position(5,5)).
+init_item   :-  assertz(item_details(1,1,ganja)),
+                assertz(item_details(3,8,panci)),
+                assertz(item_details(4,9,ammopack)),
+                assertz(item_details(3,9,sks)).
+
 start :-    load_map,
             init_player,
+            init_item,
             print_map(0,0).
+
