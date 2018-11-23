@@ -108,16 +108,3 @@ look :- player_position(Row,Col),
 start :-    load_map,
             init_player,
             print_map(0,0).
-
-
-
-    
-
-
-    
-    
-    
-
-
-
-
