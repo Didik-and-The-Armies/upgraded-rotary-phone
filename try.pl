@@ -16,12 +16,19 @@
 
 /*WAKTU*/ %%buat set safezone entar
 time(0).
-
+%maxmapheight(12).
+%maxmapwidth(12).
+%lookradius(3).
 %%Load Map Tiles X = Baris Y = Kolom
 print_map(12,12) :- nl,!.
 print_map(X,12) :- !, nl , NextRow is X+1, print_map(NextRow,0).
-print_map(X,Y) :- player_position(X,Y), ! , write('P '),NextCol is Y + 1,print_map(X, NextCol).
-print_map(X,Y) :- tile(X,Y,Tile), (Tile == 'X' -> !,  write('X ') ; Tile == 'O'-> !, write('- ')), NextCol is Y + 1, print_map(X, NextCol).
+print_map(X,Y) :- player_position(X,Y), ! , write(' P '),NextCol is Y + 1,print_map(X, NextCol).
+print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1, print_map(X, NextCol).
+
+print_tile(Row,Col,_) :- player_position(Row,Col),write(' P ').
+print_tile(_,_,X) :- (  X == 'X', write(' X ');
+                    X == 'O', write(' - ')
+                 ).
 
 load_map(_,_,[]) :- !.
 load_map(X,Y,[Head|Tail]) :- assertz(tile(X,Y,Head)), Y1 is Y + 1, load_map(X,Y1,Tail), ! .
@@ -56,14 +63,15 @@ load_map :- initial_map_r0,
 
 
 
-update_dead_zone :- time(X), mod(X, 5) =:= 0 , X >= 5 , Res is div(X, 5), ! ,tile(Row,Col,_), update_limit_dead_zone(Row,Col,Res). %karena mulai dari 0
+update_dead_zone :- time(X), mod(X, 5) =:= 0 , X >= 5 , Res is div(X, 5) ,tile(Row,Col,_), update_limit_dead_zone(Row,Col,Res). %karena mulai dari 0
 update_dead_zone :- !.
 
 
+
 update_limit_dead_zone(Row,Col,Res) :- Row == Res, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
-update_limit_dead_zone(Row,Col,Res) :- Row == 11-Res, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
+update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Row == Temp, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
 update_limit_dead_zone(Row,Col,Res) :- Col == Res, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
-update_limit_dead_zone(Row,Col,Res) :- Col == 11-Res, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
+update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Col == Temp, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
 update_limit_dead_zone :- !.
 
 init_player :- assertz(player_position(5,5)).
@@ -73,16 +81,34 @@ move_player(Direction) :-   Direction == 's' -> !, player_position(Row,Col), Row
 move_player(Direction) :-   Direction == 'e' -> !, player_position(Row,Col), Col1 is Col+1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)).
 move_player(Direction) :-   Direction == 'w' -> !, player_position(Row,Col), Col1 is Col-1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)).
 
+/*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
+
 n :-    time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)),update_dead_zone, move_player(n),!,print_map(0,0).
 s :-    time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)),update_dead_zone, move_player(s),!,print_map(0,0).
 e :-    time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)),update_dead_zone, move_player(e),!,print_map(0,0).
 w :-    time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)),update_dead_zone, move_player(w),!,print_map(0,0).
 
 
+look :- player_position(Row,Col),
+        A is Row-1,
+        B is Row+1,
+        C is Col-1,
+        D is Col+1,
+        tile(A,C,Tile),print_tile(A,C,Tile),
+        tile(A,Col,Tile),print_tile(A,Col,Tile),
+        tile(A,D,Tile),print_tile(A,D,Tile),nl,
+        tile(Row,C,Tile),print_tile(Row,C,Tile),
+        tile(Row,Col,Tile),print_tile(Row, Col, Tile),
+        tile(Row,D,Tile),print_tile(Row, D, Tile),nl,
+        tile(B,C,Tile),print_tile(B, C, Tile),
+        tile(B,Col,Tile),print_tile(B, Col, Tile),
+        tile(B,D,Tile),print_tile(B, D, Tile),nl.
 
 start :-    load_map,
             init_player,
             print_map(0,0).
+
+
 
     
 
