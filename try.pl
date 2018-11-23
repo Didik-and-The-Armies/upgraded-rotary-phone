@@ -63,7 +63,7 @@ load_map :- initial_map_r0,
 
 
 
-update_dead_zone :- time(X), mod(X, 5) =:= 0 , X >= 5 , Res is div(X, 5) ,tile(Row,Col,_), update_limit_dead_zone(Row,Col,Res). %karena mulai dari 0
+update_dead_zone :- time(X), mod(X, 5) =:= 0 , X >= 5 , Res is div(X, 5) ,tile(Row,Col,_), update_limit_dead_zone(Row,Col,Res), fail. %karena mulai dari 0
 update_dead_zone :- !.
 
 
