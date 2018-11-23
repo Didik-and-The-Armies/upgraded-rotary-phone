@@ -33,11 +33,14 @@ item(pistol,weapon).
 item(sniper,weapon).
 item(bazooka,weapon).
 item(panci,weapon).
+
 item(kutang,armor).
 item(kevlarlvl1,armor).
 item(kevlarlvl2,armor).
 item(kevlarlvl3,armor).
+
 item(ganja,medicine).
+
 item(ammopack,ammo).
 
 
@@ -54,10 +57,9 @@ ammo(panci,0).
 
 
 
-%%Load Map Tiles X = Baris Y = Kolom
+%%Mencetak full map
 print_map(12,12) :- nl,nl,!.
 print_map(X,12) :- !, nl , nl,  NextRow is X+1, print_map(NextRow,0).
-%print_map(X,Y) :- player_position(X,Y), ! , write('  P  '),NextCol is Y + 1,print_map(X, NextCol).
 print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1, print_map(X, NextCol).
 
 print_tile(_,_,X) :- X == 'X', ! ,  write('  X  ').
@@ -69,7 +71,7 @@ print_tile(Row,Col,_) :- (  item_details(Row,Col,Item) ->
                                     item(Item,medicine) -> write('  M  ');
                                     item(Item,ammo) -> write('  O  ')
                                 );
-                            write('  -  ')
+                            write('  _  ')
                          ). 
 
 load_map(_,_,[]) :- !.
@@ -124,12 +126,10 @@ move_player(Direction) :-   Direction == 'w' -> !, player_position(Row,Col), Col
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
 
-n :-    time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)),update_dead_zone, move_player(n),!,print_map(0,0).
-s :-    time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)),update_dead_zone, move_player(s),!,print_map(0,0).
-e :-    time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)),update_dead_zone, move_player(e),!,print_map(0,0).
-w :-    time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)),update_dead_zone, move_player(w),!,print_map(0,0).
-
-
+n :-    update_time,update_dead_zone, move_player(n),!,print_map(0,0).
+s :-    update_time,update_dead_zone, move_player(s),!,print_map(0,0).
+e :-    update_time,update_dead_zone, move_player(e),!,print_map(0,0).
+w :-    update_time,update_dead_zone, move_player(w),!,print_map(0,0).
 look :- player_position(Row,Col),
         A is Row-1,
         B is Row+1,
@@ -144,7 +144,29 @@ look :- player_position(Row,Col),
         tile(Row,D,Tile6),print_tile(Row, D, Tile6),nl,nl,
         tile(B,C,Tile7),print_tile(B, C, Tile7),
         tile(B,Col,Tile8),print_tile(B, Col, Tile8),
-        tile(B,D,Tile9),print_tile(B, D, Tile9),nl,nl,!.
+        tile(B,D,Tile9),print_tile(B, D, Tile9),nl,nl,
+        /*BAGIAN PESAN*/
+        write('You are in Pochinki..'),nl,!,
+        look_item_around(A,C),
+        look_item_around(A,Col),
+        look_item_around(A,D),
+        look_item_around(Row,C),
+        look_item_around(Row,Col),
+        look_item_around(Row,D),
+        look_item_around(B,C),
+        look_item_around(B,Col),
+        look_item_around(B,D).
+        
+
+
+/*FUNGSI-FUNGSI DALAM GAME*/
+update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
+
+look_item_around(Row, Col) :- item_details(Row,Col,Item), item(Item, medicine), !, write('You see an '), write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl).
+look_item_around(Row, Col) :- item_details(Row, Col, Item), item(Item, armor), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl).
+look_item_around(Row, Col) :- item_details(Row, Col, Item), item(Item, weapon), !, write('You see an empty '),write(Item),(player_position(Row,Col)->write(' lying on the grass'),nl;nl).
+look_item_around(Row, Col) :- item_details(Row, Col, Item), item(Item, ammo), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl).
+look_item_around(_,_) :- !.
 
 
 
@@ -153,7 +175,7 @@ init_player :-  assertz(player_position(5,5)).
 init_item   :-  assertz(item_details(1,1,ganja)),
                 assertz(item_details(3,8,panci)),
                 assertz(item_details(4,9,ammopack)),
-                assertz(item_details(3,9,sks)).
+                assertz(item_details(3,8,sks)).
 
 start :-    load_map,
             init_player,
