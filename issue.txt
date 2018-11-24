@@ -8,12 +8,12 @@ Bug yang ketemu :
 
 Fitur yang belum ada :
 
-1. Modar kalo nyentuh deadzone
-2. Attack
+1. (DONE) Modar kalo nyentuh deadzone
+2. (DONE) Attack, tinggal bikin story biar gak garing.
 3. Save
 4. Load
 5. Interface bahasa minang
-6. Kalo gerak dari tile yang ada musuhnya (kabur), diserang dan health berkurang
+6. (DONE) Kalo gerak dari tile yang ada musuhnya (kabur), diserang dan health berkurang
 7. Validasi input pemain
 8. Musuh modar kalo kena deadzone
 9. Attack masih garing
@@ -21,7 +21,7 @@ Fitur yang belum ada :
 11. Random
 12. Tipe Terrain ketentuannya gimana ada yang tau?
 13. Kalo pake command LOOK,STATUS, pas ada musuh musuhnya nyerang gak?
-
+14. Game Over
 ...
 
 Last. Rapihin program, samain formatnya kayak di command listing biar rapih enak diliat
