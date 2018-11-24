@@ -390,19 +390,29 @@ print_nsew(Row,Col) :- tile(Row,Col,Tile), Tile == 'X', !,  write(' is a dead zo
 print_nsew(_,_) :- !, write(' is an open field.'),nl.
 
 
-look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,_), (item(Item, medicine), write('You see '), write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,Val),
+                                        (
+                                            item(Item, medicine)-> write('You see '), write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
+                                            item(Item, armor)-> write('You see '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
+                                            item(Item, weapon)-> write('You see '),(Val == 0->write('an empty ');write('a ')),write(Item),(player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
+                                            item(Item, ammo)-> write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl)
+                                        )
+                                    ),!.
+
+look_item_around(_,_) :- !.        
+/*
 look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, armor), write('You see '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
 look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,Val), (item(Item, weapon), write('You see '),(Val == 0->write('an empty ');write('a ')),write(Item),(player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
 look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, ammo), write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
 look_item_around(_,_) :- !.
-
+*/
 show_health     :-  write('Health : '), player_original_health(X),!, write(X).
 show_armor      :-  write('Armor : '), player_armor_health(X), !, write(X).
 show_weapon     :-  write('Weapon : '), player_equipped_weapon(X,_), !, write(X).
 show_weapon     :-  write('none'),!.
 show_ammo       :-  player_equipped_weapon(_,X), !,write('Ammo : '),  write(X),nl.
 show_ammo       :-  !.
-show_inventory  :-  write('Inventory : '),nl,
+show_inventory  :-  write('Inventory '),write('('),current_inventory(C),write(C),write('/'),max_inventory(M),write(M),write(')'),write(' : '),nl,
                     player_inventory(_,_),!,
                     (forall(player_inventory(X,Y),
                         (write('  '),write(X),
@@ -410,7 +420,7 @@ show_inventory  :-  write('Inventory : '),nl,
                     ).
 show_inventory  :-  write('Your inventory is empty !'),nl,!.
 
-/*MASIH KELUAR*/
+/*MASIH KELUAR TRUE?*/
 heal(X) :-  player_original_health(S),
             retractall(player_original_health(_)),
             X1 is S + X,
