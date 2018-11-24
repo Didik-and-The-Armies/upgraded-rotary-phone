@@ -2,8 +2,9 @@ Bug di file ditandai dengan comment <ISSUE>
 
 Bug yang ketemu :
 
-1. Kalo mau  USE senjata <X>, dan di inventorinya ada lebih dari 1 <X>, dia ngeluarin "true?"
-2. Nyerang musuh, ada > 1 musuh di tile yang sama, keluar "true?"
+1. Kalo mau  USE senjata <X>, dan di inventorinya ada lebih dari 1 <X>, dia ngeluarin "true?" (solved)
+2. ATTACK musuh, ada > 1 musuh di tile yang sama, keluar "true?" (solved)
+3. 
 
 Fitur yang belum ada :
 
@@ -15,4 +16,23 @@ Fitur yang belum ada :
 6. Kalo gerak dari tile yang ada musuhnya (kabur), diserang dan health berkurang
 7. Validasi input pemain
 8. Musuh modar kalo kena deadzone
-9. Attack masih garing 
+9. Attack masih garing
+10. Musuh bisa gerak?
+11. Random
+12. Tipe Terrain ketentuannya gimana ada yang tau?
+13. Kalo pake command LOOK,STATUS, pas ada musuh musuhnya nyerang gak?
+
+...
+
+Last. Rapihin program, samain formatnya kayak di command listing biar rapih enak diliat
+
+
+Asumsi :
+
+1. Musuh sekali diserang langsung mati 
+2. Musuh selalu bisa nyerang, gaada pengecekan peluru, jadi pas diassign weapon minimal harus ada pelurunya 1.
+3. Ammo Musuh gak berkurang setealh nembak.
+4. Kalo di 1 tile ada > 1 musuh, yang nyerang cuma 1 doang
+5. Musuh gak gerak
+
+
