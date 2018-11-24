@@ -16,12 +16,15 @@
 %player_inventory(<armor_name>,<armor_remaining_health>)
 %player_inventory(<medicine_name>,<medicine_healing_capacity>)
 %player_inventory(<ammo>,<weapon_ammo>) sementara anggep peluru itu universal
+:- dynamic(current_inventory/1).
+:- dynamic(max_inventory/1).
+
 
 :- dynamic(enemy_position/2).
 :- dynamic(enemy_inventory/2). %Formatnya sama kayak yang player
 %Musuh sekali attack langsung modar sementara, dan gapake armor
 :- dynamic(player_equipped_weapon/1).
-:- dynamic(item_details/3). %Koordinat baris kolom, nama item
+:- dynamic(item_details/4). %Koordinat baris kolom, nama item sama isinya 
 
 /*DETAILS*/ %%nyawa,duit,waktu,dan lain lain
 :- dynamic(time/1).
@@ -36,6 +39,10 @@
 
 /*WAKTU*/ %%buat set safezone entar
 time(0).
+
+/*BESAR INVENTORI*/
+current_inventory(0).
+max_inventory(10).
 
 /*ITEM YANG ADA PADA GAME */
 %Weapon
@@ -91,7 +98,7 @@ print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1,!, prin
 print_tile(_,_,X) :- X == 'X', ! ,  write('  X  ').
 print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
 print_tile(Row,Col,_) :- enemy_position(Row,Col), ! , write('  E  ').
-print_tile(Row,Col,_) :- (  item_details(Row,Col,Item) ->   
+print_tile(Row,Col,_) :- (  item_details(Row,Col,Item,_) ->   
                                 (   item(Item,weapon) -> write('  W  ');
                                     item(Item,armor) -> write('  A  ');
                                     item(Item,medicine) -> write('  M  ');
@@ -152,10 +159,10 @@ move_player(Direction) :-   Direction == 'w' -> !, player_position(Row,Col), Col
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
 
-n :-    shell(clear),update_time,update_dead_zone, move_player(n),!/*,print_map(0,0)*/,look_nsew.
-s :-    shell(clear),update_time,update_dead_zone, move_player(s),!/*,print_map(0,0)*/,look_nsew.
-e :-    shell(clear),update_time,update_dead_zone, move_player(e),!/*,print_map(0,0)*/,look_nsew.
-w :-    shell(clear),update_time,update_dead_zone, move_player(w),!/*,print_map(0,0)*/,look_nsew.
+n :-    shell(clear),update_time,update_dead_zone, move_player(n),!,map,look_nsew.
+s :-    shell(clear),update_time,update_dead_zone, move_player(s),!,map,look_nsew.
+e :-    shell(clear),update_time,update_dead_zone, move_player(e),!,map,look_nsew.
+w :-    shell(clear),update_time,update_dead_zone, move_player(w),!,map,look_nsew.
 
 map:-  shell(clear),print_map(0,0),!.
 
@@ -260,6 +267,18 @@ status :- shell(clear),
           show_ammo,
           show_inventory,nl,nl.
 
+take(Item)  :-  player_position(X,Y),item_details(X,Y,Item,Val),
+                current_inventory(S),
+                S < 10,!,
+                retract(item_details(X,Y,Item,Val)),
+                assertz(player_inventory(Item,Val)),
+                S1 is S + 1,
+                retractall(current_inventory(_)),
+                assertz(current_inventory(S1)),!,look,nl,write('You take '),write(Item),write(' .'),nl.
+
+take(_)     :-  current_inventory(S), S == 10, !, write('Your inventory is full !'),nl.
+take(Item)  :-  !,write('No '),write(Item),write(' can be found'),nl.  
+
 quit.
 
 /*FUNGSI-FUNGSI DALAM GAME*/
@@ -281,10 +300,10 @@ print_nsew(Row,Col) :- tile(Row,Col,Tile), Tile == 'X', !,  write(' is a dead zo
 print_nsew(_,_) :- !, write(' is an open field.'),nl.
 
 
-look_item_around(Row, Col) :- forall(item_details(Row,Col,Item), (item(Item, medicine), !, write('You see an '), write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, armor), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, weapon), !, write('You see an empty '),write(Item),(player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, ammo), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,_), (item(Item, medicine), !, write('You see an '), write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, armor), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, weapon), !, write('You see an empty '),write(Item),(player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, ammo), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
 look_item_around(_,_) :- !.
 
 show_health     :-  write('Health : '), player_original_health(X),!, write(X).
@@ -293,7 +312,12 @@ show_weapon     :-  write('Weapon : '), player_equipped_weapon(X,_), !, write(X)
 show_weapon     :-  write('none'),!.
 show_ammo       :-  player_equipped_weapon(_,X), !,write('Ammo : '),  write(X),nl.
 show_ammo       :-  !.
-show_inventory  :-  write('Inventory : '),nl,player_inventory(_,_),!,(forall(player_inventory(X,Y), (write('  '),write(X),(X == magazine->write('('),write(Y),write(')');nl)))).
+show_inventory  :-  write('Inventory : '),nl,
+                    player_inventory(_,_),!,
+                    (forall(player_inventory(X,Y),
+                        (write('  '),write(X),
+                        (X==magazine->write('('),write(Y),write(')');nl)))
+                    ).
 show_inventory  :-  write('Your inventory is empty !'),nl,!.
 
 /*INISIALISASI*/
@@ -301,27 +325,16 @@ init_player :-  assertz(player_position(5,5)),
                 assertz(player_total_health(100)),
                 assertz(player_original_health(100)),
                 assertz(player_armor_health(0)),
-                assertz(player_equipped_weapon(sks,25)),
-                assertz(player_inventory(ak47,30)),
-                assertz(player_inventory(magazine,30)).
+                assertz(player_equipped_weapon(sks,25)).
                 
 
 
-init_item   :-  assertz(item_details(1,1,grenade)),
-                assertz(item_details(3,8,ganja)),
-                assertz(item_details(4,9,magazine)),
-                assertz(item_details(3,6,sks)),
-                assertz(item_details(3,6,m416)).
+init_item   :-  assertz(item_details(1,1,grenade,1)),
+                assertz(item_details(3,8,ganja,30)),
+                assertz(item_details(4,9,magazine,5)),
+                assertz(item_details(3,6,sks,7)),
+                assertz(item_details(5,5,m416,7)).
 
 init_enemy  :-  assertz(enemy_position(6,5)).
 
 
-
-/*
-start :-    load_map,
-            init_player,
-            init_item,
-            init_enemy,
-            map,
-            look_enemy.
-*/
