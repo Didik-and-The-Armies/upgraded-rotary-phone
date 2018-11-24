@@ -161,17 +161,17 @@ update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Col == Temp, retract(til
 update_limit_dead_zone(_,_,_) :- !.
 
 
-move_player(Direction) :-   Direction == 'n' -> !, player_position(Row,Col), Row1 is Row-1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)).
-move_player(Direction) :-   Direction == 's' -> !, player_position(Row,Col), Row1 is Row+1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)).
-move_player(Direction) :-   Direction == 'e' -> !, player_position(Row,Col), Col1 is Col+1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)).
-move_player(Direction) :-   Direction == 'w' -> !, player_position(Row,Col), Col1 is Col-1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)).
+move_player(Direction) :-   Direction == 'n' -> !, is_enemy_attack,player_position(Row,Col), Row1 is Row-1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)).
+move_player(Direction) :-   Direction == 's' -> !, is_enemy_attack,player_position(Row,Col), Row1 is Row+1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)).
+move_player(Direction) :-   Direction == 'e' -> !, is_enemy_attack,player_position(Row,Col), Col1 is Col+1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)).
+move_player(Direction) :-   Direction == 'w' -> !, is_enemy_attack,player_position(Row,Col), Col1 is Col-1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)).
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
 
-n :-    shell(clear),update_time,update_dead_zone, move_player(n),!,map,look_nsew.
-s :-    shell(clear),update_time,update_dead_zone, move_player(s),!,map,look_nsew.
-e :-    shell(clear),update_time,update_dead_zone, move_player(e),!,map,look_nsew.
-w :-    shell(clear),update_time,update_dead_zone, move_player(w),!,map,look_nsew.
+n :-    shell(clear),update_time,update_dead_zone, move_player(n),!,/*map*/look_nsew.
+s :-    shell(clear),update_time,update_dead_zone, move_player(s),!,/*map*/look_nsew.
+e :-    shell(clear),update_time,update_dead_zone, move_player(e),!,/*map*/look_nsew.
+w :-    shell(clear),update_time,update_dead_zone, move_player(w),!,/*map*/look_nsew.
 
 map:-  shell(clear),print_map(0,0),!.
 
@@ -269,7 +269,7 @@ help :-     %shell(clear),
             nl,
             nl.
 
-status :- shell(clear),
+status :- %shell(clear),
           show_health,nl,
           show_armor,nl,
           show_weapon,nl,
@@ -383,7 +383,7 @@ use(Item)   :- !, write('No '),write(Item),write(' in your inventory.'),nl.
 attack  :-  player_position(Row,Col),enemy_position(Row,Col),
             player_equipped_weapon(PW,Ammo),
             Ammo > 0,!,
-            enemy_equipped_weapon(_,_,EW,EAmmo),
+            enemy_equipped_weapon(_,_,EW,_),
             damage(PW,_),
             damage(EW,ED),
             player_total_health(TH),player_armor_health(AA),player_original_health(OA),
@@ -405,11 +405,11 @@ attack  :-  player_position(Row,Col),enemy_position(Row,Col),
             assertz(player_equipped_weapon(PW,AfterAmmo)),
             retract(enemy_equipped_weapon(Row,Col,_,_)),
             retract(enemy_position(Row,Col)),
-            AfterEAmmo is EAmmo - 1,
+            damage(EW,AfterEAmmo),
             assertz(item_details(Row,Col,EW,AfterEAmmo)),
-            forall(enemy_inventory(_,_),(enemy_inventory(Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Item,Val)))).
+            forall(enemy_inventory(_,_),(enemy_inventory(Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Item,Val)))),!.
 
-attack  :-  player_position(Row,Col),enemy_position(Row,Col),
+attack  :-  player_position(Row,Col),enemy_position(Row,Col),!,
             (
                 player_equipped_weapon(_,_)->player_equipped_weapon(_,Ammo),Ammo == 0, !,write('You have no ammunition, please reload !'),nl;
                 !,write('You can\'t attack your enemy with bare hands, that\'s suicide !'),nl
@@ -420,7 +420,7 @@ attack  :-  player_position(Row,Col),
             RowDown is Row + 1,
             ColLeft is Col - 1,
             ColRight is Col + 1,
-            enemy_position(ERow,ECol),
+            enemy_position(ERow,ECol),!,
             (
                 ERow == RowUp,ECol == ColLeft;
                 ERow == RowUp,ECol == Col;
@@ -431,7 +431,6 @@ attack  :-  player_position(Row,Col),
                 ERow == RowDown,ECol == Col;
                 ERow == RowDown,ECol == ColRight
             ),
-            !,
             write('Can\'t reach the enemy, you need to go closer !'),nl.
 
 attack  :- !, write('No enemy in sight.'),nl.
@@ -453,6 +452,27 @@ look_nsew :- player_position(Row,Col),
 
 look_enemy :- forall(enemy_position(Row,Col),(player_position(Row,Col)->write('Enemy spotted! Get ready for combat or run !'),nl,!;!)).
 
+is_enemy_attack :-  player_position(Row,Col),enemy_position(Row,Col),
+                    enemy_equipped_weapon(_,_,EW,_),
+                    damage(EW,ED),
+                    player_total_health(TH),player_armor_health(AA),player_original_health(OA),
+                    retractall(player_total_health(_)),retractall(player_armor_health(_)),retractall(player_original_health(_)),
+                    AfterAA is AA - ED,
+                    AfterTH is TH - ED,
+                    (AfterAA =< 0 ->
+                        retractall(player_equipped_armor(_)),
+                        assertz(player_armor_health(0)),
+                        AfterOA is OA + AfterAA
+                        ;
+                        assertz(player_armor_health(AfterAA)),
+                        AfterOA is OA
+                    ),
+                    assertz(player_original_health(AfterOA)),
+                    assertz(player_total_health(AfterTH)),
+                    !,
+                    write('You run away after attacked by an enemy'),nl,nl.
+is_enemy_attack :- !.
+
 print_nsew(Row,Col) :- enemy_position(Row,Col), !, write(' you can hear enemy nearby, prepare yourself.'),nl.
 print_nsew(Row,Col) :- tile(Row,Col,Tile), Tile == 'X', !,  write(' is a dead zone.'),nl.
 print_nsew(_,_) :- !, write(' is an open field.'),nl.
@@ -468,12 +488,7 @@ look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,Val),
                                     ),!.
 
 look_item_around(_,_) :- !.        
-/*
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, armor), write('You see '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,Val), (item(Item, weapon), write('You see '),(Val == 0->write('an empty ');write('a ')),write(Item),(player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, ammo), write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
-look_item_around(_,_) :- !.
-*/
+
 show_health     :-  write('Health : '), player_original_health(X),!, write(X).
 show_armor      :-  write('Armor : '), player_armor_health(X), !, write(X).
 show_weapon     :-  write('Weapon : '), player_equipped_weapon(X,_), !, write(X).
@@ -500,7 +515,7 @@ heal(X) :-  player_original_health(S),
             player_armor_health(A),
             retractall(player_total_health(_)),
             T is A + H,
-            assertz(player_total_health(T)).
+            assertz(player_total_health(T)),!.
 
 /*INISIALISASI*/
 init_player :-  assertz(player_position(5,5)),
@@ -514,14 +529,17 @@ init_player :-  assertz(player_position(5,5)),
 init_item   :-  assertz(item_details(1,1,grenade,1)),
                 assertz(item_details(3,8,bandage,30)),
                 assertz(item_details(4,9,magazine,5)),
-                assertz(item_details(3,6,sks,7)),
+                assertz(item_details(5,5,sks,7)),
                 assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,sks,5)),
+                assertz(item_details(5,5,sks,7)),
                 assertz(item_details(5,5,spetnaz,40)),
                 assertz(item_details(5,5,bandage,30)).
 
 init_enemy  :-  assertz(enemy_position(6,5)),
                 assertz(enemy_equipped_weapon(6,5,sks,5)),
-                assertz(enemy_inventory(bandage,30)).
+                assertz(enemy_inventory(bandage,30)),
+                assertz(enemy_position(6,5)),
+                assertz(enemy_equipped_weapon(6,5,pistol,1)),
+                assertz(enemy_inventory(medkit,30)).
 
 
