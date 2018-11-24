@@ -5,14 +5,22 @@
 
 /*PLAYER*/
 :- dynamic(player_position/2).
-:- dynamic(player_health/1).
-:- dynamic(player_armor/1).
-:- dynamic(player_inventory/1).
-
+:- dynamic(player_total_health/1). %original health + armor_health
+:- dynamic(player_original_health/1).
+:- dynamic(player_armor_health/1). %yang di equip , 0 kalo gaada
+:- dynamic(player_equipped_armor/1).
+:- dynamic(player_equipped_weapon/2). %Nama dan sisa peluru
+:- dynamic(player_inventory/2).
+/* Keterangan : */
+%player_inventory(<weapon_name>,<weapon_ammo>)
+%player_inventory(<armor_name>,<armor_remaining_health>)
+%player_inventory(<medicine_name>,<medicine_healing_capacity>)
+%player_inventory(<ammo>,<weapon_ammo>) sementara anggep peluru itu universal
 
 :- dynamic(enemy_position/2).
-:- dynamic(enemy_inventory/1).
-
+:- dynamic(enemy_inventory/2). %Formatnya sama kayak yang player
+%Musuh sekali attack langsung modar sementara, dan gapake armor
+:- dynamic(player_equipped_weapon/1).
 :- dynamic(item_details/3). %Koordinat baris kolom, nama item
 
 /*DETAILS*/ %%nyawa,duit,waktu,dan lain lain
@@ -40,7 +48,7 @@ item(sks,weapon).
 item(pistol,weapon).
 item(sniper,weapon).
 item(bazooka,weapon).
-item(panci,weapon).
+item(grenade,weapon).
 
 item(kutang,armor).
 item(kevlarlvl1,armor).
@@ -49,9 +57,9 @@ item(kevlarlvl3,armor).
 
 item(ganja,medicine).
 
-item(ammopack,ammo).
+item(magazine,ammo).
 
-
+%Fakta kepasitias peluru setiap senjata
 ammo(m416,7).
 ammo(scar,7).
 ammo(akm,7).
@@ -61,8 +69,18 @@ ammo(sks,8).
 ammo(pistol,10).
 ammo(sniper,3).
 ammo(bazooka,1).
-ammo(panci,0).
+ammo(grenade,1).
 
+damage(m416,30).
+damage(scar,35).
+damage(akm,30).
+damage(ump9,25).
+damage(shotgun,40).
+damage(sks,25).
+damage(pistol,15).
+damage(sniper,80).
+damage(bazooka,100).
+damage(grenade,70).
 
 
 %%Mencetak full map
@@ -169,70 +187,79 @@ look :- shell(clear),
         look_item_around(B,Col),
         look_item_around(B,D).
         
-    start :-    write('    _/_/_/    _/    _/  _/_/_/      _/_/_/'),
-    nl,
-    write('   _/    _/  _/    _/  _/    _/  _/       '),
-    nl,
-    write('  _/_/_/    _/    _/  _/_/_/    _/  _/_/  '),
-    nl,
-    write(' _/        _/    _/  _/    _/  _/    _/   '),
-    nl,
-    write('_/          _/_/    _/_/_/      _/_/_/    '),
-    nl,
-    nl,
-    write('Welcome to the battlefield!'),
-    nl,
-    write('You have been chosen as one of the lucky contestants. Be the last man standing and you will be remembered as one of the victors'),
-    nl,
-    nl,
-    help,
-    load_map,
-    init_player,
-    init_item,
-    init_enemy,
-    look_enemy.
+start :-    shell(clear),
+            write('    _/_/_/    _/    _/  _/_/_/      _/_/_/'),
+            nl,
+            write('   _/    _/  _/    _/  _/    _/  _/       '),
+            nl,
+            write('  _/_/_/    _/    _/  _/_/_/    _/  _/_/  '),
+            nl,
+            write(' _/        _/    _/  _/    _/  _/    _/   '),
+            nl,
+            write('_/          _/_/    _/_/_/      _/_/_/    '),
+            nl,
+            nl,
+            write('Welcome to the battlefield!'),
+            nl,
+            write('You have been chosen as one of the lucky contestants. Be the last man standing and you will be remembered as one of the victors'),
+            nl,
+            nl,
+            help,
+            load_map,
+            init_player,
+            init_item,
+            init_enemy,
+            look_enemy.
     
-help :-     write('Available commands:'),
-    nl,
-    write('  start. -- start the game!'),
-    nl,
-    write('  help. -- show available commands'),
-    nl,
-    write('  quit. -- quit the game'),
-    nl,
-    write('  look. -- look around you'),
-    nl,
-    write('  n. s. e. w. -- move'),
-    nl,
-    write('  map. -- look at the map and detect enemies'),
-    nl,
-    write('  take(Object). -- pick up an object'),
-    nl,
-    write('  drop(Object), -- drop an object'),
-    nl,
-    write('  use(Object), -- use an object'),
-    nl,
-    write('  attack. -- attack enemy that crosses your path'),
-    nl,
-    write('  status. -- show your status'),
-    nl,
-    write('  save(Filename). -- save your game'),
-    nl,
-    write('  load(Filename). -- load previously saved game'),
-    nl,
-    nl,
-    write('Legends:'),
-    nl,
-    write('W = weapon\tP = player'),
-    nl,
-    write('A = armor\tE = enemy'),
-    nl,
-    write('M = medicine\t- = accessible'),
-    nl,
-    write('O = ammo\tX = inaccessible'),
-    nl,
-    nl.
-    
+help :-     %shell(clear),
+            write('Available commands:'),
+            nl,
+            write('  start. -- start the game!'),
+            nl,
+            write('  help. -- show available commands'),
+            nl,
+            write('  quit. -- quit the game'),
+            nl,
+            write('  look. -- look around you'),
+            nl,
+            write('  n. s. e. w. -- move'),
+            nl,
+            write('  map. -- look at the map and detect enemies'),
+            nl,
+            write('  take(Object). -- pick up an object'),
+            nl,
+            write('  drop(Object), -- drop an object'),
+            nl,
+            write('  use(Object), -- use an object'),
+            nl,
+            write('  attack. -- attack enemy that crosses your path'),
+            nl,
+            write('  status. -- show your status'),
+            nl,
+            write('  save(Filename). -- save your game'),
+            nl,
+            write('  load(Filename). -- load previously saved game'),
+            nl,
+            nl,
+            write('Legends:'),
+            nl,
+            write('W = weapon\tP = player'),
+            nl,
+            write('A = armor\tE = enemy'),
+            nl,
+            write('M = medicine\t- = accessible'),
+            nl,
+            write('O = ammo\tX = inaccessible'),
+            nl,
+            nl.
+
+status :- shell(clear),
+          show_health,nl,
+          show_armor,nl,
+          show_weapon,nl,
+          show_ammo,
+          show_inventory,nl,nl.
+
 quit.
 
 /*FUNGSI-FUNGSI DALAM GAME*/
@@ -260,22 +287,33 @@ look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, w
 look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, ammo), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
 look_item_around(_,_) :- !.
 
-
+show_health     :-  write('Health : '), player_original_health(X),!, write(X).
+show_armor      :-  write('Armor : '), player_armor_health(X), !, write(X).
+show_weapon     :-  write('Weapon : '), player_equipped_weapon(X,_), !, write(X).
+show_weapon     :-  write('none'),!.
+show_ammo       :-  player_equipped_weapon(_,X), !,write('Ammo : '),  write(X),nl.
+show_ammo       :-  !.
+show_inventory  :-  write('Inventory : '),nl,player_inventory(_,_),!,(forall(player_inventory(X,Y), (write('  '),write(X),(X == magazine->write('('),write(Y),write(')');nl)))).
+show_inventory  :-  write('Your inventory is empty !'),nl,!.
 
 /*INISIALISASI*/
-init_player :-  assertz(player_position(5,5)).
-init_item   :-  assertz(item_details(1,1,panci)),
+init_player :-  assertz(player_position(5,5)),
+                assertz(player_total_health(100)),
+                assertz(player_original_health(100)),
+                assertz(player_armor_health(0)),
+                assertz(player_equipped_weapon(sks,25)),
+                assertz(player_inventory(ak47,30)),
+                assertz(player_inventory(magazine,30)).
+                
+
+
+init_item   :-  assertz(item_details(1,1,grenade)),
                 assertz(item_details(3,8,ganja)),
-                assertz(item_details(4,9,ammopack)),
-                assertz(item_details(3,8,ganja)),
+                assertz(item_details(4,9,magazine)),
                 assertz(item_details(3,6,sks)),
                 assertz(item_details(3,6,m416)).
 
-init_enemy  :-  assertz(enemy_position(6,5)),
-                assertz(enemy_position(6,5)),
-                assertz(enemy_position(4,5)),
-                assertz(enemy_position(5,6)),
-                assertz(enemy_position(5,4)).
+init_enemy  :-  assertz(enemy_position(6,5)).
 
 
 
