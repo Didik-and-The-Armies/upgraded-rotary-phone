@@ -22,6 +22,8 @@
 
 :- dynamic(enemy_position/2).
 :- dynamic(enemy_inventory/2). %Formatnya sama kayak yang player
+:- dynamic(enemy_equipped_weapon/4). %posisi,Nama dan sisa peluru
+:- dynamic(enemy_inventory/2).
 %Musuh sekali attack langsung modar sementara, dan gapake armor
 :- dynamic(player_equipped_weapon/1).
 :- dynamic(item_details/4). %Koordinat baris kolom, nama item sama isinya 
@@ -63,6 +65,7 @@ item(kevlar,armor).
 item(spetnaz,armor).
 
 item(bandage,medicine).
+item(medkit,medicine).
 item(magazine,ammo).
 
 %Fakta kepasitias peluru setiap senjata
@@ -304,7 +307,8 @@ drop(Item)  :-  !, nl, write('No '),
 
 %Asumsi kalo ada barang yang lagi diequip langsung ditaro di inventory
 use(Item)   :- player_inventory(Item,Val),!,
-               (item(Item,armor)->
+            (
+                item(Item,armor)->
                     (player_equipped_armor(Armor)->
                                 (retractall(player_equipped_armor(_)),
                                  player_armor_health(H),
@@ -330,17 +334,18 @@ use(Item)   :- player_inventory(Item,Val),!,
                     current_inventory(X2),
                     retractall(current_inventory(_)),
                     X3 is X2 - 1,
-                    assertz(current_inventory(X3));
-
-               item(Item,weapon)->
+                    assertz(current_inventory(X3)),
+                    !,write(Item),write(' equipped.'),nl
+                ;
+                item(Item,weapon)-> /*ISSUE*/
                     (player_equipped_weapon(Weapon,Bullet)->
-                                (retractall(player_equipped_weapon(Weapon,Bullet)),
+                                retractall(player_equipped_weapon(Weapon,Bullet)),
                                  assertz(player_inventory(Weapon,Bullet)),
                                  current_inventory(X),
                                  retractall(current_inventory(_)),
                                  X1 is X + 1,
                                  assertz(current_inventory(X1))
-                                );
+                                ;
                                 %Kalo gaada weapon yang lagi dipake
                                 (true)
                                 
@@ -350,24 +355,87 @@ use(Item)   :- player_inventory(Item,Val),!,
                     current_inventory(X2),
                     retractall(current_inventory(_)),
                     X3 is X2 - 1,
-                    assertz(current_inventory(X3));
-
+                    assertz(current_inventory(X3)),
+                    !,write(Item),write(' equipped, ready to battle?'),nl
+                ;
                 item(Item,medicine)-> heal(Val),
                                       retract(player_inventory(Item,Val)),
                                       current_inventory(C),
                                       retractall(current_inventory(_)),
                                       C1 is C - 1,
-                                      assertz(current_inventory(C1));
-
+                                      assertz(current_inventory(C1)),
+                                      !,write(Item),write(' used, now you feel better.'),nl
+                ;
                 item(Item,ammo) -> retract(player_equipped_weapon(W,B)),
                                    B1 is B+Val,
                                    assertz(player_equipped_weapon(W,B1)),
                                    current_inventory(X),
                                    retractall(current_inventory(_)),
                                    X1 is X - 1,
-                                   assertz(current_inventory(X1))
-               ).
+                                   assertz(current_inventory(X1)),
+                                   !,write(Item),write(' used, ready to some shooting?'),nl
+            ).
 use(Item)   :- !, write('No '),write(Item),write(' in your inventory.'),nl.
+
+
+%Asumsi 1: semua musuh yang diserang langsung mati, karena dibolehin di spek tubes.
+%Asumssi 2 : musuh harus bersenjata
+attack  :-  player_position(Row,Col),enemy_position(Row,Col),
+            player_equipped_weapon(PW,Ammo),
+            Ammo > 0,!,
+            enemy_equipped_weapon(_,_,EW,EAmmo),
+            damage(PW,_),
+            damage(EW,ED),
+            player_total_health(TH),player_armor_health(AA),player_original_health(OA),
+            retractall(player_total_health(_)),retractall(player_armor_health(_)),retractall(player_original_health(_)),
+            AfterAA is AA - ED,
+            AfterTH is TH - ED,
+            (AfterAA =< 0 ->
+                retractall(player_equipped_armor(_)),
+                assertz(player_armor_health(0)),
+                AfterOA is OA + AfterAA
+                ;
+                assertz(player_armor_health(AfterAA)),
+                AfterOA is OA
+            ),
+            assertz(player_original_health(AfterOA)),
+            assertz(player_total_health(AfterTH)),
+            retractall(player_equipped_weapon(_,_)),
+            AfterAmmo is Ammo - 1,
+            assertz(player_equipped_weapon(PW,AfterAmmo)),
+            retract(enemy_equipped_weapon(Row,Col,_,_)),
+            retract(enemy_position(Row,Col)),
+            AfterEAmmo is EAmmo - 1,
+            assertz(item_details(Row,Col,EW,AfterEAmmo)),
+            forall(enemy_inventory(_,_),(enemy_inventory(Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Item,Val)))).
+
+attack  :-  player_position(Row,Col),enemy_position(Row,Col),
+            (
+                player_equipped_weapon(_,_)->player_equipped_weapon(_,Ammo),Ammo == 0, !,write('You have no ammunition, please reload !'),nl;
+                !,write('You can\'t attack your enemy with bare hands, that\'s suicide !'),nl
+            ).
+
+attack  :-  player_position(Row,Col),
+            RowUp is Row - 1,
+            RowDown is Row + 1,
+            ColLeft is Col - 1,
+            ColRight is Col + 1,
+            enemy_position(ERow,ECol),
+            (
+                ERow == RowUp,ECol == ColLeft;
+                ERow == RowUp,ECol == Col;
+                ERow == RowUp,ECol == ColRight;
+                ERow == Row,ECol == ColLeft;
+                ERow == Row,ECol == ColRight;
+                ERow == RowDown,ECol == ColLeft;
+                ERow == RowDown,ECol == Col;
+                ERow == RowDown,ECol == ColRight
+            ),
+            !,
+            write('Can\'t reach the enemy, you need to go closer !'),nl.
+
+attack  :- !, write('No enemy in sight.'),nl.
+
 
 quit.
 
@@ -424,11 +492,10 @@ show_inventory  :-  write('Your inventory is empty !'),nl,!.
 heal(X) :-  player_original_health(S),
             retractall(player_original_health(_)),
             X1 is S + X,
-            X1 >= 100 ->
-               ( 
+            (X1 >= 100 ->
                  assertz(player_original_health(100));
                  assertz(player_original_health(X1))
-               ),
+            ),
             player_original_health(H),
             player_armor_health(A),
             retractall(player_total_health(_)),
@@ -449,10 +516,15 @@ init_item   :-  assertz(item_details(1,1,grenade,1)),
                 assertz(item_details(4,9,magazine,5)),
                 assertz(item_details(3,6,sks,7)),
                 assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,sks,5)),
                 assertz(item_details(5,5,spetnaz,40)),
                 assertz(item_details(5,5,bandage,30)).
 
-init_enemy  :-  assertz(enemy_position(6,5)).
+init_enemy  :-  assertz(enemy_position(6,5)),
+                assertz(enemy_equipped_weapon(6,5,sks,5)),
+                assertz(enemy_inventory(bandage,30)),
+                assertz(enemy_position(6,5)).
+                %assertz(enemy_equipped_weapon(6,5,pistol,1)),
+                %assertz(enemy_inventory(medkit,40)).
 
 
