@@ -15,7 +15,8 @@
 /*DEKLARASI BESAR MAP*/
 
 
-/*MAP AWAL*/
+/*TERRAIN MAP*/
+
 
 
 /*WAKTU*/ %%buat set safezone entar
@@ -58,9 +59,9 @@ ammo(panci,0).
 
 
 %%Mencetak full map
-print_map(12,12) :- nl,nl,!.
+print_map(12,0) :- !,nl,nl.
 print_map(X,12) :- !, nl , nl,  NextRow is X+1, print_map(NextRow,0).
-print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1, print_map(X, NextCol).
+print_map(X,Y) :- !,tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1, print_map(X, NextCol).
 
 print_tile(_,_,X) :- X == 'X', ! ,  write('  X  ').
 print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
@@ -107,7 +108,7 @@ load_map :- initial_map_r0,
 
 
 
-update_dead_zone :- time(X), mod(X, 5) =:= 0 , X >= 5 , Res is div(X, 5) ,tile(Row,Col,_), update_limit_dead_zone(Row,Col,Res), fail. %karena mulai dari 0
+update_dead_zone :- time(X), mod(X, 5) =:= 0 , Res is div(X, 5) ,!, forall(tile(Row,Col,_), update_limit_dead_zone(Row,Col,Res)),!,nl,nl,write('The storm is coming...'),nl,nl. %karena mulai dari 0
 update_dead_zone :- !.
 
 
@@ -116,7 +117,7 @@ update_limit_dead_zone(Row,Col,Res) :- Row == Res, retract(tile(Row,Col,_)),asse
 update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Row == Temp, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
 update_limit_dead_zone(Row,Col,Res) :- Col == Res, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
 update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Col == Temp, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
-update_limit_dead_zone :- !.
+update_limit_dead_zone(_,_,_) :- !.
 
 
 move_player(Direction) :-   Direction == 'n' -> !, player_position(Row,Col), Row1 is Row-1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)).
@@ -126,10 +127,11 @@ move_player(Direction) :-   Direction == 'w' -> !, player_position(Row,Col), Col
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
 
-n :-    update_time,update_dead_zone, move_player(n),!,print_map(0,0).
-s :-    update_time,update_dead_zone, move_player(s),!,print_map(0,0).
-e :-    update_time,update_dead_zone, move_player(e),!,print_map(0,0).
-w :-    update_time,update_dead_zone, move_player(w),!,print_map(0,0).
+n :-    update_time,update_dead_zone, move_player(n),!,print_map(0,0),look_nsew.
+s :-    update_time,update_dead_zone, move_player(s),!,print_map(0,0),look_nsew.
+e :-    update_time,update_dead_zone, move_player(e),!,print_map(0,0),look_nsew.
+w :-    update_time,update_dead_zone, move_player(w),!,print_map(0,0),look_nsew.
+
 look :- player_position(Row,Col),
         A is Row-1,
         B is Row+1,
@@ -162,10 +164,26 @@ look :- player_position(Row,Col),
 /*FUNGSI-FUNGSI DALAM GAME*/
 update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
 
-look_item_around(Row, Col) :- forall(item_details(Row,Col,Item), (item(Item, medicine), !, write('You see an '), write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))).
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, armor), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))).
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, weapon), !, write('You see an empty '),write(Item),(player_position(Row,Col)->write(' lying on the grass'),nl;nl))).
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, ammo), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))).
+
+look_nsew :- player_position(Row,Col),
+             RowUp is Row - 1, RowDown is Row + 1, ColLeft is Col - 1, ColRight is Col + 1,
+             write('On your north, '),print_nsew(RowUp,Col),
+             write('On your south, '),print_nsew(RowDown,Col),
+             write('On your east, '),print_nsew(Row,ColRight),
+             write('On your west,'),print_nsew(Row,ColLeft),nl,nl,
+             look_enemy.
+
+look_enemy :- forall(enemy_position(Row,Col),(player_position(Row,Col)->write('Enemy spotted! Get ready for combat or run !'),nl,!;!)).
+
+print_nsew(Row,Col) :- enemy_position(Row,Col), !, write(' you can hear enemy nearby, prepare yourself.'),nl.
+print_nsew(Row,Col) :- tile(Row,Col,Tile), Tile == 'X', !,  write(' is a dead zone.'),nl.
+print_nsew(_,_) :- !, write(' is an open field.'),nl.
+
+
+look_item_around(Row, Col) :- forall(item_details(Row,Col,Item), (item(Item, medicine), !, write('You see an '), write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, armor), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, weapon), !, write('You see an empty '),write(Item),(player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, ammo), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
 look_item_around(_,_) :- !.
 
 
@@ -179,8 +197,15 @@ init_item   :-  assertz(item_details(1,1,panci)),
                 assertz(item_details(3,6,sks)),
                 assertz(item_details(3,6,m416)).
 
+init_enemy  :-  assertz(enemy_position(6,5)),
+                assertz(enemy_position(6,5)),
+                assertz(enemy_position(4,5)),
+                assertz(enemy_position(5,6)),
+                assertz(enemy_position(5,4)).
 start :-    load_map,
             init_player,
             init_item,
-            print_map(0,0).
+            init_enemy,
+            print_map(0,0),
+            look_enemy.
 
