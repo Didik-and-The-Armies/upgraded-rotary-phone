@@ -5,7 +5,14 @@
 
 /*PLAYER*/
 :- dynamic(player_position/2).
+:- dynamic(player_health/1).
+:- dynamic(player_armor/1).
+:- dynamic(player_inventory/1).
+
+
 :- dynamic(enemy_position/2).
+:- dynamic(enemy_inventory/1).
+
 :- dynamic(item_details/3). %Koordinat baris kolom, nama item
 
 /*DETAILS*/ %%nyawa,duit,waktu,dan lain lain
@@ -59,9 +66,9 @@ ammo(panci,0).
 
 
 %%Mencetak full map
-print_map(12,0) :- !,nl,nl.
-print_map(X,12) :- !, nl , nl,  NextRow is X+1, print_map(NextRow,0).
-print_map(X,Y) :- !,tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1, print_map(X, NextCol).
+print_map(12,0) :- nl,nl,!.
+print_map(X,12) :- nl , nl,  NextRow is X+1,!, print_map(NextRow,0).
+print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1,!, print_map(X, NextCol).
 
 print_tile(_,_,X) :- X == 'X', ! ,  write('  X  ').
 print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
@@ -127,12 +134,15 @@ move_player(Direction) :-   Direction == 'w' -> !, player_position(Row,Col), Col
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
 
-n :-    update_time,update_dead_zone, move_player(n),!,print_map(0,0),look_nsew.
-s :-    update_time,update_dead_zone, move_player(s),!,print_map(0,0),look_nsew.
-e :-    update_time,update_dead_zone, move_player(e),!,print_map(0,0),look_nsew.
-w :-    update_time,update_dead_zone, move_player(w),!,print_map(0,0),look_nsew.
+n :-    shell(clear),update_time,update_dead_zone, move_player(n),!/*,print_map(0,0)*/,look_nsew.
+s :-    shell(clear),update_time,update_dead_zone, move_player(s),!/*,print_map(0,0)*/,look_nsew.
+e :-    shell(clear),update_time,update_dead_zone, move_player(e),!/*,print_map(0,0)*/,look_nsew.
+w :-    shell(clear),update_time,update_dead_zone, move_player(w),!/*,print_map(0,0)*/,look_nsew.
 
-look :- player_position(Row,Col),
+map:-  shell(clear),print_map(0,0),!.
+
+look :- shell(clear),
+        player_position(Row,Col),
         A is Row-1,
         B is Row+1,
         C is Col-1,
@@ -159,7 +169,71 @@ look :- player_position(Row,Col),
         look_item_around(B,Col),
         look_item_around(B,D).
         
-
+    start :-    write('    _/_/_/    _/    _/  _/_/_/      _/_/_/'),
+    nl,
+    write('   _/    _/  _/    _/  _/    _/  _/       '),
+    nl,
+    write('  _/_/_/    _/    _/  _/_/_/    _/  _/_/  '),
+    nl,
+    write(' _/        _/    _/  _/    _/  _/    _/   '),
+    nl,
+    write('_/          _/_/    _/_/_/      _/_/_/    '),
+    nl,
+    nl,
+    write('Welcome to the battlefield!'),
+    nl,
+    write('You have been chosen as one of the lucky contestants. Be the last man standing and you will be remembered as one of the victors'),
+    nl,
+    nl,
+    help,
+    load_map,
+    init_player,
+    init_item,
+    init_enemy,
+    look_enemy.
+    
+help :-     write('Available commands:'),
+    nl,
+    write('  start. -- start the game!'),
+    nl,
+    write('  help. -- show available commands'),
+    nl,
+    write('  quit. -- quit the game'),
+    nl,
+    write('  look. -- look around you'),
+    nl,
+    write('  n. s. e. w. -- move'),
+    nl,
+    write('  map. -- look at the map and detect enemies'),
+    nl,
+    write('  take(Object). -- pick up an object'),
+    nl,
+    write('  drop(Object), -- drop an object'),
+    nl,
+    write('  use(Object), -- use an object'),
+    nl,
+    write('  attack. -- attack enemy that crosses your path'),
+    nl,
+    write('  status. -- show your status'),
+    nl,
+    write('  save(Filename). -- save your game'),
+    nl,
+    write('  load(Filename). -- load previously saved game'),
+    nl,
+    nl,
+    write('Legends:'),
+    nl,
+    write('W = weapon\tP = player'),
+    nl,
+    write('A = armor\tE = enemy'),
+    nl,
+    write('M = medicine\t- = accessible'),
+    nl,
+    write('O = ammo\tX = inaccessible'),
+    nl,
+    nl.
+    
+quit.
 
 /*FUNGSI-FUNGSI DALAM GAME*/
 update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
@@ -202,10 +276,14 @@ init_enemy  :-  assertz(enemy_position(6,5)),
                 assertz(enemy_position(4,5)),
                 assertz(enemy_position(5,6)),
                 assertz(enemy_position(5,4)).
+
+
+
+/*
 start :-    load_map,
             init_player,
             init_item,
             init_enemy,
-            print_map(0,0),
+            map,
             look_enemy.
-
+*/
