@@ -58,12 +58,11 @@ item(bazooka,weapon).
 item(grenade,weapon).
 
 item(kutang,armor).
-item(kevlarlvl1,armor).
-item(kevlarlvl2,armor).
-item(kevlarlvl3,armor).
+item(helm,armor).
+item(kevlar,armor).
+item(spetnaz,armor).
 
-item(ganja,medicine).
-
+item(bandage,medicine).
 item(magazine,ammo).
 
 %Fakta kepasitias peluru setiap senjata
@@ -89,6 +88,13 @@ damage(sniper,80).
 damage(bazooka,100).
 damage(grenade,70).
 
+protection(kutang,0).
+protection(helm,10).
+protection(kevlar,20).
+protection(spetnaz,40).
+
+heal_capacity(bandage,15).
+heal_capacity(medkit,30).
 
 %%Mencetak full map
 print_map(12,0) :- nl,nl,!.
@@ -296,7 +302,72 @@ drop(Item)  :-  !, nl, write('No '),
                 write(' in your inventory.'),nl.
 
 
+%Asumsi kalo ada barang yang lagi diequip langsung ditaro di inventory
+use(Item)   :- player_inventory(Item,Val),!,
+               (item(Item,armor)->
+                    (player_equipped_armor(Armor)->
+                                (retractall(player_equipped_armor(_)),
+                                 player_armor_health(H),
+                                 retractall(player_armor_health(_)),
+                                 assertz(player_inventory(Armor,H)),
+                                 current_inventory(X),
+                                 retractall(current_inventory(_)),
+                                 X1 is X + 1,
+                                 assertz(current_inventory(X1))
+                                );
+                                %Kalo gaada armor yang lagi dipake
+                                (true)
 
+                    ),
+                    player_total_health(H1),
+                    retractall(player_armor_health(_)),
+                    retractall(player_total_health(_)),
+                    retract(player_inventory(Item,Val)),
+                    assertz(player_equipped_armor(Item)),
+                    assertz(player_armor_health(Val)),
+                    TotalHealth is Val+H1,
+                    assertz(player_total_health(TotalHealth)),
+                    current_inventory(X2),
+                    retractall(current_inventory(_)),
+                    X3 is X2 - 1,
+                    assertz(current_inventory(X3));
+
+               item(Item,weapon)->
+                    (player_equipped_weapon(Weapon,Bullet)->
+                                (retractall(player_equipped_weapon(Weapon,Bullet)),
+                                 assertz(player_inventory(Weapon,Bullet)),
+                                 current_inventory(X),
+                                 retractall(current_inventory(_)),
+                                 X1 is X + 1,
+                                 assertz(current_inventory(X1))
+                                );
+                                %Kalo gaada weapon yang lagi dipake
+                                (true)
+                                
+                    ),
+                    retract(player_inventory(Item,Val)),
+                    assertz(player_equipped_weapon(Item,Val)),
+                    current_inventory(X2),
+                    retractall(current_inventory(_)),
+                    X3 is X2 - 1,
+                    assertz(current_inventory(X3));
+
+                item(Item,medicine)-> heal(Val),
+                                      retract(player_inventory(Item,Val)),
+                                      current_inventory(C),
+                                      retractall(current_inventory(_)),
+                                      C1 is C - 1,
+                                      assertz(current_inventory(C1));
+
+                item(Item,ammo) -> retract(player_equipped_weapon(W,B)),
+                                   B1 is B+Val,
+                                   assertz(player_equipped_weapon(W,B1)),
+                                   current_inventory(X),
+                                   retractall(current_inventory(_)),
+                                   X1 is X - 1,
+                                   assertz(current_inventory(X1))
+               ).
+use(Item)   :- !, write('No '),write(Item),write(' in your inventory.'),nl.
 
 quit.
 
@@ -319,10 +390,10 @@ print_nsew(Row,Col) :- tile(Row,Col,Tile), Tile == 'X', !,  write(' is a dead zo
 print_nsew(_,_) :- !, write(' is an open field.'),nl.
 
 
-look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,_), (item(Item, medicine), !, write('You see '), write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, armor), !, write('You see '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,Val), (item(Item, weapon), !, write('You see '),(Val == 0->write('an empty ');write('a ')),write(Item),(player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, ammo), !, write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,_), (item(Item, medicine), write('You see '), write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, armor), write('You see '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,Val), (item(Item, weapon), write('You see '),(Val == 0->write('an empty ');write('a ')),write(Item),(player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, ammo), write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
 look_item_around(_,_) :- !.
 
 show_health     :-  write('Health : '), player_original_health(X),!, write(X).
@@ -339,30 +410,38 @@ show_inventory  :-  write('Inventory : '),nl,
                     ).
 show_inventory  :-  write('Your inventory is empty !'),nl,!.
 
+/*MASIH KELUAR*/
+heal(X) :-  player_original_health(S),
+            retractall(player_original_health(_)),
+            X1 is S + X,
+            X1 >= 100 ->
+               ( 
+                 assertz(player_original_health(100));
+                 assertz(player_original_health(X1))
+               ),
+            player_original_health(H),
+            player_armor_health(A),
+            retractall(player_total_health(_)),
+            T is A + H,
+            assertz(player_total_health(T)).
+
 /*INISIALISASI*/
 init_player :-  assertz(player_position(5,5)),
-                assertz(player_total_health(100)),
-                assertz(player_original_health(100)),
-                assertz(player_armor_health(0)),
-                assertz(player_equipped_weapon(sks,25)).
+                assertz(player_total_health(75)),
+                assertz(player_original_health(75)),
+                assertz(player_armor_health(0)).
+                %assertz(player_equipped_weapon(sks,5)).
                 
 
 
 init_item   :-  assertz(item_details(1,1,grenade,1)),
-                assertz(item_details(3,8,ganja,30)),
+                assertz(item_details(3,8,bandage,30)),
                 assertz(item_details(4,9,magazine,5)),
                 assertz(item_details(3,6,sks,7)),
                 assertz(item_details(5,5,m416,7)),
                 assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,m416,7)).
+                assertz(item_details(5,5,spetnaz,40)),
+                assertz(item_details(5,5,bandage,30)).
 
 init_enemy  :-  assertz(enemy_position(6,5)).
 
