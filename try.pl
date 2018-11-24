@@ -279,6 +279,25 @@ take(Item)  :-  player_position(X,Y),item_details(X,Y,Item,Val),
 take(_)     :-  current_inventory(S), S == 10, !, write('Your inventory is full !'),nl.
 take(Item)  :-  !,write('No '),write(Item),write(' can be found'),nl.  
 
+
+drop(Item) :-  player_inventory(Item,Val),
+               retract(player_inventory(Item,Val)),
+               retract(current_inventory(X)),
+               X1 is X - 1,
+               assertz(current_inventory(X1)),
+               player_position(Row,Col),
+               assertz(item_details(Row,Col,Item,Val)),
+               look,!,nl,
+               write(Item),
+               write(' has been dropped.'),nl.
+
+drop(Item)  :-  !, nl, write('No '),
+                write(Item),
+                write(' in your inventory.'),nl.
+
+
+
+
 quit.
 
 /*FUNGSI-FUNGSI DALAM GAME*/
@@ -300,10 +319,10 @@ print_nsew(Row,Col) :- tile(Row,Col,Tile), Tile == 'X', !,  write(' is a dead zo
 print_nsew(_,_) :- !, write(' is an open field.'),nl.
 
 
-look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,_), (item(Item, medicine), !, write('You see an '), write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, armor), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, weapon), !, write('You see an empty '),write(Item),(player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
-look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, ammo), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,_), (item(Item, medicine), !, write('You see '), write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, armor), !, write('You see '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,Val), (item(Item, weapon), !, write('You see '),(Val == 0->write('an empty ');write('a ')),write(Item),(player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item,_), (item(Item, ammo), !, write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl))),!.
 look_item_around(_,_) :- !.
 
 show_health     :-  write('Health : '), player_original_health(X),!, write(X).
@@ -333,6 +352,16 @@ init_item   :-  assertz(item_details(1,1,grenade,1)),
                 assertz(item_details(3,8,ganja,30)),
                 assertz(item_details(4,9,magazine,5)),
                 assertz(item_details(3,6,sks,7)),
+                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,m416,7)),
+                assertz(item_details(5,5,m416,7)),
                 assertz(item_details(5,5,m416,7)).
 
 init_enemy  :-  assertz(enemy_position(6,5)).
