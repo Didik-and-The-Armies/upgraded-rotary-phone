@@ -9,11 +9,11 @@ Bug yang ketemu :
 Fitur yang belum ada :
 
 1. Modar kalo nyentuh deadzone
-2. Attack
+2. (DONE) Attack, tinggal bikin story biar gak garing.
 3. Save
 4. Load
 5. Interface bahasa minang
-6. Kalo gerak dari tile yang ada musuhnya (kabur), diserang dan health berkurang
+6. (DONE) Kalo gerak dari tile yang ada musuhnya (kabur), diserang dan health berkurang
 7. Validasi input pemain
 8. Musuh modar kalo kena deadzone
 9. Attack masih garing
