@@ -162,20 +162,22 @@ look :- player_position(Row,Col),
 /*FUNGSI-FUNGSI DALAM GAME*/
 update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
 
-look_item_around(Row, Col) :- item_details(Row,Col,Item), item(Item, medicine), !, write('You see an '), write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl).
-look_item_around(Row, Col) :- item_details(Row, Col, Item), item(Item, armor), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl).
-look_item_around(Row, Col) :- item_details(Row, Col, Item), item(Item, weapon), !, write('You see an empty '),write(Item),(player_position(Row,Col)->write(' lying on the grass'),nl;nl).
-look_item_around(Row, Col) :- item_details(Row, Col, Item), item(Item, ammo), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl).
+look_item_around(Row, Col) :- forall(item_details(Row,Col,Item), (item(Item, medicine), !, write('You see an '), write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))).
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, armor), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))).
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, weapon), !, write('You see an empty '),write(Item),(player_position(Row,Col)->write(' lying on the grass'),nl;nl))).
+look_item_around(Row, Col) :- forall(item_details(Row, Col, Item), (item(Item, ammo), !, write('You see an '),write(Item), (player_position(Row,Col)->write(' lying on the grass'),nl;nl))).
 look_item_around(_,_) :- !.
 
 
 
 /*INISIALISASI*/
 init_player :-  assertz(player_position(5,5)).
-init_item   :-  assertz(item_details(1,1,ganja)),
-                assertz(item_details(3,8,panci)),
+init_item   :-  assertz(item_details(1,1,panci)),
+                assertz(item_details(3,8,ganja)),
                 assertz(item_details(4,9,ammopack)),
-                assertz(item_details(3,8,sks)).
+                assertz(item_details(3,8,ganja)),
+                assertz(item_details(3,6,sks)),
+                assertz(item_details(3,6,m416)).
 
 start :-    load_map,
             init_player,
