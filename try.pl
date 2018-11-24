@@ -522,9 +522,6 @@ init_item   :-  assertz(item_details(1,1,grenade,1)),
 
 init_enemy  :-  assertz(enemy_position(6,5)),
                 assertz(enemy_equipped_weapon(6,5,sks,5)),
-                assertz(enemy_inventory(bandage,30)),
-                assertz(enemy_position(6,5)).
-                %assertz(enemy_equipped_weapon(6,5,pistol,1)),
-                %assertz(enemy_inventory(medkit,40)).
+                assertz(enemy_inventory(bandage,30)).
 
 
