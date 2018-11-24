@@ -23,7 +23,6 @@
 :- dynamic(enemy_position/2).
 :- dynamic(enemy_inventory/2). %Formatnya sama kayak yang player
 :- dynamic(enemy_equipped_weapon/4). %posisi,Nama dan sisa peluru
-:- dynamic(enemy_inventory/2).
 %Musuh sekali attack langsung modar sementara, dan gapake armor
 :- dynamic(player_equipped_weapon/1).
 :- dynamic(item_details/4). %Koordinat baris kolom, nama item sama isinya 
@@ -161,10 +160,10 @@ update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Col == Temp, retract(til
 update_limit_dead_zone(_,_,_) :- !.
 
 
-move_player(Direction) :-   Direction == 'n' -> !, is_enemy_attack,player_position(Row,Col), Row1 is Row-1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)).
-move_player(Direction) :-   Direction == 's' -> !, is_enemy_attack,player_position(Row,Col), Row1 is Row+1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)).
-move_player(Direction) :-   Direction == 'e' -> !, is_enemy_attack,player_position(Row,Col), Col1 is Col+1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)).
-move_player(Direction) :-   Direction == 'w' -> !, is_enemy_attack,player_position(Row,Col), Col1 is Col-1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)).
+move_player(Direction) :-   Direction == 'n' -> !, is_enemy_attack,player_position(Row,Col), Row1 is Row-1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)), is_in_dead_zone.
+move_player(Direction) :-   Direction == 's' -> !, is_enemy_attack,player_position(Row,Col), Row1 is Row+1, retractall(player_position(_,_)), assertz(player_position(Row1,Col)), is_in_dead_zone.
+move_player(Direction) :-   Direction == 'e' -> !, is_enemy_attack,player_position(Row,Col), Col1 is Col+1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)), is_in_dead_zone.
+move_player(Direction) :-   Direction == 'w' -> !, is_enemy_attack,player_position(Row,Col), Col1 is Col-1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)), is_in_dead_zone.
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
 
@@ -440,6 +439,9 @@ quit.
 
 /*FUNGSI-FUNGSI DALAM GAME*/
 update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
+
+is_in_dead_zone :- player_position(X,Y), tile(X,Y,Z), Z == 'X', retractall(player_original_health(_)),assertz(player_original_health(0)).
+is_in_dead_zone :- !.
 
 
 look_nsew :- player_position(Row,Col),
