@@ -283,13 +283,11 @@ take(Item)  :-  player_position(X,Y),item_details(X,Y,Item,Val),
                 S1 is S + 1,
                 retractall(current_inventory(_)),
                 assertz(current_inventory(S1)),!,look,nl,
-                format('You take ~w .',[Item]).
-                %write('You take '),write(Item),write(' .'),nl.
+                format('You take ~w.',[Item]).
 
 take(_)     :-  current_inventory(S), S == 10, !, write('Your inventory is full !'),nl.
 take(Item)  :-  !,
-                format('No ~w can be found .',[Item]),nl.
-                %write('No '),write(Item),write(' can be found'),nl.  
+                format('No ~w can be found.',[Item]),nl. 
 
 
 drop(Item) :-  player_inventory(Item,Val),
@@ -300,12 +298,10 @@ drop(Item) :-  player_inventory(Item,Val),
                player_position(Row,Col),
                assertz(item_details(Row,Col,Item,Val)),
                look,!,nl,
-               write(Item),
-               write(' has been dropped.'),nl.
+               format('~w has been dropped.',[Item]),nl.
 
-drop(Item)  :-  !, nl, write('No '),
-                write(Item),
-                write(' in your inventory.'),nl.
+drop(Item)  :-  !, nl,
+                format('No ~w in your inventory.',[Item]),nl.
 
 
 %Asumsi kalo ada barang yang lagi diequip langsung ditaro di inventory
@@ -378,7 +374,7 @@ use(Item)   :- player_inventory(Item,Val),!,
                                    assertz(current_inventory(X1)),
                                    !,write(Item),write(' used, ready to some shooting?'),nl
             ).
-use(Item)   :- !, write('No '),write(Item),write(' in your inventory.'),nl.
+use(Item)   :- !, format('No ~w in your inventory.',[Item]),nl.
 
 
 %Asumsi 1: semua musuh yang diserang langsung mati, karena dibolehin di spek tubes.
