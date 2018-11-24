@@ -282,10 +282,14 @@ take(Item)  :-  player_position(X,Y),item_details(X,Y,Item,Val),
                 assertz(player_inventory(Item,Val)),
                 S1 is S + 1,
                 retractall(current_inventory(_)),
-                assertz(current_inventory(S1)),!,look,nl,write('You take '),write(Item),write(' .'),nl.
+                assertz(current_inventory(S1)),!,look,nl,
+                format('You take ~w .',[Item]).
+                %write('You take '),write(Item),write(' .'),nl.
 
 take(_)     :-  current_inventory(S), S == 10, !, write('Your inventory is full !'),nl.
-take(Item)  :-  !,write('No '),write(Item),write(' can be found'),nl.  
+take(Item)  :-  !,
+                format('No ~w can be found .',[Item]),nl.
+                %write('No '),write(Item),write(' can be found'),nl.  
 
 
 drop(Item) :-  player_inventory(Item,Val),
@@ -497,7 +501,7 @@ show_weapon     :-  write('Weapon : '), player_equipped_weapon(X,_), !, write(X)
 show_weapon     :-  write('none'),!.
 show_ammo       :-  player_equipped_weapon(_,X), !,write('Ammo : '),  write(X),nl.
 show_ammo       :-  !.
-show_inventory  :-  write('Inventory '),write('('),current_inventory(C),write(C),write('/'),max_inventory(M),write(M),write(')'),write(' : '),nl,
+show_inventory  :-  current_inventory(C),max_inventory(M),format('Inventory : (~w/~w)',[C,M]),nl,
                     player_inventory(_,_),!,
                     (forall(player_inventory(X,Y),
                         (write('  '),write(X),
