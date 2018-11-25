@@ -383,16 +383,21 @@ use(Item)   :-  %shell(clear),
                                       assertz(current_inventory(C1)), status, 
                                       !,write(Item),write(' used, now you feel better.'),nl
                 ;
-                item(Item,ammo,_) ->retract(player_equipped_weapon(W,B)),
-                                    B1 is B+Val,
-                                    assertz(player_equipped_weapon(W,B1)),
-                                    current_inventory(X),
-                                    retractall(current_inventory(_)),
-                                    X1 is X - 1,
-                                    assertz(current_inventory(X1)),
-                                    retract(player_inventory(Item,_)),
-                                    status, 
-                                    !,write(Item),write(' used, ready to some shooting?'),nl
+                item(Item,ammo,_) ->(
+                                        retract(player_equipped_weapon(W,B))->
+                                            B1 is B+Val,
+                                            assertz(player_equipped_weapon(W,B1)),
+                                            current_inventory(X),
+                                            retractall(current_inventory(_)),
+                                            X1 is X - 1,
+                                            assertz(current_inventory(X1)),
+                                            retract(player_inventory(Item,_)),
+                                            status, 
+                                            !,write(Item),write(' used, ready to some shooting?'),nl
+                                        ;
+                                            !, write('\nYou need to equip weapon first !\n')
+
+                                    )
                 ;
                 item(Item,bag,_) -> value(Item,Capacity),
                                     retract(player_inventory(Item,_)),
@@ -419,7 +424,7 @@ restart :- reset_game,initiliaze_game.
 quit    :- write('Loading..\n'),sleep(2),
            write('See you next time soldier\n'),sleep(2),
            write('Exiting..\n'),sleep(2),
-            
+           show_credits_team,
            halt.
 
 /*FUNGSI-FUNGSI DALAM GAME*/
@@ -739,6 +744,13 @@ show_credits_win :- write('\nAfter a hard fought battle, finally you stand as lo
 show_credits_lose :- write('\nYou lose..\n'),sleep(2),
                      write('\nCupu cok\n'),sleep(1),
                      write('\nMending belajar sono buat uas\n'),sleep(1),!.
+
+show_credits_team :- %shell(clear),
+                     write('\nCREATED BY : \n\n'),
+                     write('\nAbda Shaffan Diva 13517021\n\n'),
+                     write('\nDidik Supriadi 13517069\n\n'),
+                     write('\nJuniardi Akbar 13517075\n\n'),
+                     write('\nM. Hendry Prasetya 13517105\n\n').
 
 show_title :-   %shell(clear),
                 write('    _/_/_/    _/    _/  _/_/_/      _/_/_/'),
