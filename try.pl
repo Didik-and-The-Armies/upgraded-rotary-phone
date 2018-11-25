@@ -112,7 +112,7 @@ value(carrier,10).%24
 %%Mencetak full map
 print_map(12,0) :- nl,nl,!.
 print_map(X,12) :- nl , nl,  NextRow is X+1,!, print_map(NextRow,0).
-print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1,!, print_map(X, NextCol).
+print_map(X,Y) :- tile(X,Y,Tile), print_map_tile(X,Y,Tile), NextCol is Y + 1,!, print_map(X, NextCol).
 
 print_tile(_,_,X) :- X == 'x', ! ,  write('  x  ').
 print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
@@ -186,7 +186,7 @@ move_player(Direction) :-   Direction == 'w' -> !, is_enemy_attack,player_positi
 
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
-start :-    shell(clear),
+start :-    /*shell(clear),*/
             show_title,
             write('What do you wanna do ? [new/load/quit] \n'),
 			read(Command),
@@ -196,10 +196,10 @@ start :-    shell(clear),
 			   ;Command == 'quit' -> quit
 			).
 
-n :-    shell(clear),update_time,update_dead_zone, move_player(n),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
-s :-    shell(clear),update_time,update_dead_zone, move_player(s),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
-e :-    shell(clear),update_time,update_dead_zone, move_player(e),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
-w :-    shell(clear),update_time,update_dead_zone, move_player(w),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
+n :-    /*shell(clear),*/update_time,update_dead_zone, move_player(n),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
+s :-    /*shell(clear),*/update_time,update_dead_zone, move_player(s),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
+e :-    /*shell(clear),*/update_time,update_dead_zone, move_player(e),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
+w :-    /*shell(clear),*/update_time,update_dead_zone, move_player(w),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
 
 map:-  shell(clear),print_map(0,0),!.
 
