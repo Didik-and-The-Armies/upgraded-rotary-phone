@@ -34,7 +34,7 @@
 :- dynamic(time/1).
 
 
-/*ITEM YANG ADA PADA GAME */
+/*ITEM YANG ADA PADA GAME */ %Kalo mau nambah item procedure generate_items yang dibawah juga harus dirubah
 %Weapon
 item(m416,weapon,1).
 item(scar,weapon,2).
@@ -53,9 +53,20 @@ item(spetnaz,armor,13).
 
 item(bandage,medicine,14).
 item(medkit,medicine,15).
-item(magazine,ammo,16).
+item(penicilin,medicine,16).
+item(painkiller,medicine,17).
+item(tolakangin,medicine,18).
+item(madurasa,medicine,19).
 
-%Fakta kapasitias peluru setiap senjata
+item(magazine,ammo,20).
+item(bulletpack,ammo,21).
+
+item(ransel,bag,22).
+item(bagpack,bag,23).
+item(carrier,bag,24).
+
+
+
 damage(m416,30).
 damage(scar,35).
 damage(akm,30).
@@ -67,26 +78,36 @@ damage(sniper,80).
 damage(bazooka,99).
 damage(grenade,70).
 
-value(m416,7).
-value(scar,7).
-value(akm,7).
-value(ump9,5).
-value(shotgun,5).
-value(sks,8).
-value(pistol,10).
-value(sniper,3).
-value(bazooka,1).
-value(grenade,1).
+value(m416,3). %1
+value(scar,3). %2
+value(akm,3). %3
+value(ump9,5). %4
+value(shotgun,2). %5
+value(sks,4). %6
+value(pistol,8). %7
+value(sniper,3). %8
+value(bazooka,1). %9
+value(grenade,1). %10
 
 
-value(helm,10).
-value(kevlar,20).
-value(spetnaz,40).
+value(helm,10). %11
+value(kevlar,20).%12
+value(spetnaz,40).%13
 
-value(bandage,15).
-value(medkit,30).
+value(bandage,15).%14
+value(medkit,30).%15
+value(penicilin,20).%16
+value(painkiller,10).%17
+value(tolakangin,50).%18
+value(madurasa,25).%19
 
-value(magazine,5).
+
+value(magazine,2).%20
+value(bulletpack,1).%21
+
+value(ransel,5).%22
+value(bagpack,8).%23
+value(carrier,10).%24
 
 %%Mencetak full map
 print_map(12,0) :- nl,nl,!.
@@ -100,7 +121,8 @@ print_tile(Row,Col,_) :- (  item_details(Row,Col,Item,_) ->
                                 (   item(Item,weapon,_) -> write('  W  ');
                                     item(Item,armor,_) -> write('  A  ');
                                     item(Item,medicine,_) -> write('  M  ');
-                                    item(Item,ammo,_) -> write('  O  ')
+                                    item(Item,ammo,_) -> write('  O  ');
+                                    item(Item,bag,_) -> write('  B  ')
                                 );
                             write('  _  ')
                          ). 
@@ -353,14 +375,24 @@ use(Item)   :-  shell(clear),
                                       assertz(current_inventory(C1)),
                                       !,write(Item),write(' used, now you feel better.'),nl
                 ;
-                item(Item,ammo,_) -> retract(player_equipped_weapon(W,B)),
-                                   B1 is B+Val,
-                                   assertz(player_equipped_weapon(W,B1)),
-                                   current_inventory(X),
-                                   retractall(current_inventory(_)),
-                                   X1 is X - 1,
-                                   assertz(current_inventory(X1)),
-                                   !,write(Item),write(' used, ready to some shooting?'),nl
+                item(Item,ammo,_) ->retract(player_equipped_weapon(W,B)),
+                                    B1 is B+Val,
+                                    assertz(player_equipped_weapon(W,B1)),
+                                    current_inventory(X),
+                                    retractall(current_inventory(_)),
+                                    X1 is X - 1,
+                                    assertz(current_inventory(X1)),
+                                    !,write(Item),write(' used, ready to some shooting?'),nl
+                ;
+                item(Item,bag,_) -> value(Item,Capacity),
+                                    retract(player_inventory(Item,_)),
+                                    current_inventory(C),
+                                    retractall(current_inventory(_)),
+                                    C1 is C - 1,
+                                    assertz(current_inventory(C1)),
+                                    retractall(max_inventory(_)),
+                                    assertz(max_inventory(Capacity)),
+                                    !,write(Item),write(' equipped, do you feel lighter or heavier ?'),nl
             ).
 use(Item)   :- !, format('No ~w in your inventory.',[Item]),nl.
 
@@ -434,7 +466,8 @@ look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,Val),
                                             item(Item, medicine,_)-> write('You see '), write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
                                             item(Item, armor,_)-> write('You see '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
                                             item(Item, weapon,_)-> write('You see '),(Val == 0->write('an empty ');write('a ')),write(Item),(player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
-                                            item(Item, ammo,_)-> write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl)
+                                            item(Item, ammo,_)-> write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
+                                            item(Item, bag,_) -> write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl)
                                         )
                                     ),!.
 
@@ -467,22 +500,6 @@ heal(X) :-  player_original_health(S),
             retractall(player_total_health(_)),
             T is A + H,
             assertz(player_total_health(T)),!.
-
-/*INISIALISASI*/
-init_player :-  random(1,10,Row),random(1,10,Col),
-                assertz(player_position(Row,Col)),
-                assertz(player_total_health(75)),
-                assertz(player_original_health(75)),
-                assertz(player_armor_health(0)).
-                %assertz(player_equipped_weapon(sks,5)).
-                
-init_time   :-  assertz(time(0)).
-
-init_inventory :- assertz(current_inventory(0)),assertz(max_inventory(10)).
-
-init_item   :-  random(1,11,ItemNumber),generate_items(ItemNumber).
-
-init_enemy  :-  random(1,11,EnemyNumber),generate_enemy(EnemyNumber).
 
 move_enemies :- time(X), mod(X,3) =:= 0, enemy_position(_,_),!,
                 random(1,5,D),!,
@@ -563,7 +580,7 @@ generate_enemy(X)   :-  random(1,10,ERow),random(1,10,ECol), %set posisi
                         generate_enemy(Next),!.
 
 generate_items(0) :-    !.
-generate_items(X) :-    random(1,17,I),
+generate_items(X) :-    random(1,24,I),
                         item(Name,_,I),
                         value(Name,Val),
                         random(1,10,Row),random(1,10,Col),
@@ -626,6 +643,27 @@ combat  :- !, write('No enemy in sight.'),nl.
 
 
 
+
+/*INISIALISASI*/
+init_player :-  random(1,10,Row),random(1,10,Col),
+                assertz(player_position(Row,Col)),
+                assertz(player_total_health(75)),
+                assertz(player_original_health(75)),
+                assertz(player_armor_health(0)).
+                %assertz(player_equipped_weapon(sks,5)).
+                
+init_time   :-  assertz(time(0)).
+
+init_inventory :- assertz(current_inventory(0)),assertz(max_inventory(3)).
+
+init_item   :-  random(1,11,ItemNumber),generate_items(ItemNumber).
+
+init_enemy  :-  random(1,11,EnemyNumber),generate_enemy(EnemyNumber).
+
+
+
+
+
 /*PERMAINAN SELESAI*/
 check_game_over :- player_original_health(H), H =< 0, show_credits_lose,
                 restart.
@@ -677,6 +715,11 @@ reset_time :- !.
 reset_TEP  :-  retractall(temp_enemy_position(_,_)),reset_TEI.
 reset_TEI  :-  retractall(temp_enemy_inventory(_,_,_,_)),reset_TEEW. 
 reset_TEEW  :-  retractall(temp_enemy_equipped_weapon(_,_,_,_)),!.
+
+
+
+
+
 
 
 /* PROSEDUR SAVE DAN LOAD FAKTA DARI FILE */
