@@ -28,26 +28,11 @@
 :- dynamic(temp_enemy_inventory/4). 
 :- dynamic(temp_enemy_equipped_weapon/4). %posisi,Nama dan sisa peluru
 %Musuh sekali attack langsung modar sementara, dan gapake armor
-:- dynamic(player_equipped_weapon/1).
 :- dynamic(item_details/4). %Koordinat baris kolom, nama item sama isinya 
 
 /*DETAILS*/ %%nyawa,duit,waktu,dan lain lain
 :- dynamic(time/1).
 
-
-/*DEKLARASI BESAR MAP*/
-
-
-/*TERRAIN MAP*/
-
-
-
-/*WAKTU*/ %%buat set safezone entar
-time(0).
-
-/*BESAR INVENTORI*/
-current_inventory(0).
-max_inventory(10).
 
 /*ITEM YANG ADA PADA GAME */
 %Weapon
@@ -174,10 +159,10 @@ move_player(Direction) :-   Direction == 'w' -> !, is_enemy_attack,player_positi
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
 
-n :-    shell(clear),update_time,update_dead_zone, move_player(n),move_enemies,!, delete_enemies_in_dead_zone,map,look_nsew.
-s :-    shell(clear),update_time,update_dead_zone, move_player(s),move_enemies,!, delete_enemies_in_dead_zone,map,look_nsew.
-e :-    shell(clear),update_time,update_dead_zone, move_player(e),move_enemies,!, delete_enemies_in_dead_zone,map,look_nsew.
-w :-    shell(clear),update_time,update_dead_zone, move_player(w),move_enemies,!, delete_enemies_in_dead_zone,map,look_nsew.
+n :-    shell(clear),update_time,update_dead_zone, move_player(n),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
+s :-    shell(clear),update_time,update_dead_zone, move_player(s),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
+e :-    shell(clear),update_time,update_dead_zone, move_player(e),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
+w :-    shell(clear),update_time,update_dead_zone, move_player(w),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
 
 map:-  shell(clear),print_map(0,0),!.
 
@@ -209,26 +194,12 @@ look :- shell(clear),
         look_item_around(B,Col),
         look_item_around(B,D).
         
-start :-    shell(clear),
-            write('    _/_/_/    _/    _/  _/_/_/      _/_/_/'),
-            nl,
-            write('   _/    _/  _/    _/  _/    _/  _/       '),
-            nl,
-            write('  _/_/_/    _/    _/  _/_/_/    _/  _/_/  '),
-            nl,
-            write(' _/        _/    _/  _/    _/  _/    _/   '),
-            nl,
-            write('_/          _/_/    _/_/_/      _/_/_/    '),
-            nl,
-            nl,
-            write('Welcome to the battlefield!'),
-            nl,
-            write('You have been chosen as one of the lucky contestants. Be the last man standing and you will be remembered as one of the victors'),
-            nl,
-            nl,
+start :-    show_title,
             help,
             load_map,
             init_player,
+            init_time,
+            init_inventory,
             init_item,
             init_enemy,
             look_enemy.
@@ -387,61 +358,9 @@ use(Item)   :- !, format('No ~w in your inventory.',[Item]),nl.
 
 %Asumsi 1: semua musuh yang diserang langsung mati.
 %Asumssi 2 : musuh harus bersenjata
-attack  :-  player_position(Row,Col),enemy_position(Row,Col),
-            player_equipped_weapon(PW,Ammo),
-            Ammo > 0,!,
-            enemy_equipped_weapon(Row,Col,EW,EAmmo),
-            damage(EW,ED),
-            player_total_health(TH),player_armor_health(AA),player_original_health(OA),
-            retractall(player_total_health(_)),retractall(player_armor_health(_)),retractall(player_original_health(_)),
-            AfterAA is AA - ED,
-            AfterTH is TH - ED,
-            (AfterAA =< 0 ->
-                retractall(player_equipped_armor(_)),
-                assertz(player_armor_health(0)),
-                AfterOA is OA + AfterAA
-                ;
-                assertz(player_armor_health(AfterAA)),
-                AfterOA is OA
-            ),
-            assertz(player_original_health(AfterOA)),
-            assertz(player_total_health(AfterTH)),
-            retractall(player_equipped_weapon(_,_)),
-            AfterAmmo is Ammo - 1,
-            assertz(player_equipped_weapon(PW,AfterAmmo)),
-            retract(enemy_equipped_weapon(Row,Col,EW,EAmmo)),
-            retract(enemy_position(Row,Col)),
-            assertz(item_details(Row,Col,EW,EAmmo)),
-            forall(enemy_inventory(_,_,_,_),(enemy_inventory(Row,Col,Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Row,Col,Item,Val)))),!.
+attack :- combat, check_game_over.
 
-attack  :-  player_position(Row,Col),enemy_position(Row,Col),!,
-            (
-                player_equipped_weapon(_,_)->player_equipped_weapon(_,Ammo),Ammo == 0, !,write('You have no ammunition, please reload !'),nl;
-                !,write('You can\'t attack your enemy with bare hands, that\'s suicide !'),nl
-            ).
-
-attack  :-  player_position(Row,Col),
-            RowUp is Row - 1,
-            RowDown is Row + 1,
-            ColLeft is Col - 1,
-            ColRight is Col + 1,
-            enemy_position(ERow,ECol),!,
-            (
-                ERow == RowUp,ECol == ColLeft;
-                ERow == RowUp,ECol == Col;
-                ERow == RowUp,ECol == ColRight;
-                ERow == Row,ECol == ColLeft;
-                ERow == Row,ECol == ColRight;
-                ERow == RowDown,ECol == ColLeft;
-                ERow == RowDown,ECol == Col;
-                ERow == RowDown,ECol == ColRight
-            ),
-            write('Can\'t reach the enemy, you need to go closer !'),nl,!.
-
-attack  :- !, write('No enemy in sight.'),nl.
-
-
-quit.
+quit :- reset_game,start.
 
 /*FUNGSI-FUNGSI DALAM GAME*/
 update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
@@ -543,7 +462,9 @@ init_player :-  random(1,10,Row),random(1,10,Col),
                 assertz(player_armor_health(0)).
                 %assertz(player_equipped_weapon(sks,5)).
                 
+init_time   :-  assertz(time(0)).
 
+init_inventory :- assertz(current_inventory(0)),assertz(max_inventory(10)).
 
 init_item   :-  random(1,11,ItemNumber),generate_items(ItemNumber).
 
@@ -635,3 +556,111 @@ generate_items(X) :-    random(1,17,I),
                         assertz(item_details(Row,Col,Name,Val)),
                         Next is X - 1,
                         generate_items(Next),!.
+
+combat  :-  player_position(Row,Col),enemy_position(Row,Col),
+                    player_equipped_weapon(PW,Ammo),
+                    Ammo > 0,!,
+                    enemy_equipped_weapon(Row,Col,EW,EAmmo),
+                    damage(EW,ED),
+                    player_total_health(TH),player_armor_health(AA),player_original_health(OA),
+                    retractall(player_total_health(_)),retractall(player_armor_health(_)),retractall(player_original_health(_)),
+                    AfterAA is AA - ED,
+                    AfterTH is TH - ED,
+                    (AfterAA =< 0 ->
+                        retractall(player_equipped_armor(_)),
+                        assertz(player_armor_health(0)),
+                        AfterOA is OA + AfterAA
+                        ;
+                        assertz(player_armor_health(AfterAA)),
+                        AfterOA is OA
+                    ),
+                    assertz(player_original_health(AfterOA)),
+                    assertz(player_total_health(AfterTH)),
+                    retractall(player_equipped_weapon(_,_)),
+                    AfterAmmo is Ammo - 1,
+                    assertz(player_equipped_weapon(PW,AfterAmmo)),
+                    retract(enemy_equipped_weapon(Row,Col,EW,EAmmo)),
+                    retract(enemy_position(Row,Col)),
+                    assertz(item_details(Row,Col,EW,EAmmo)),
+                    forall(enemy_inventory(_,_,_,_),(enemy_inventory(Row,Col,Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Row,Col,Item,Val)))),!.
+        
+combat  :-  player_position(Row,Col),enemy_position(Row,Col),!,
+                    (
+                        player_equipped_weapon(_,_)->player_equipped_weapon(_,Ammo),Ammo == 0, !,write('You have no ammunition, please reload !'),nl;
+                        !,write('You can\'t combat your enemy with bare hands, that\'s suicide !'),nl
+                    ).
+        
+combat  :-  player_position(Row,Col),
+                    RowUp is Row - 1,
+                    RowDown is Row + 1,
+                    ColLeft is Col - 1,
+                    ColRight is Col + 1,
+                    enemy_position(ERow,ECol),!,
+                    (
+                        ERow == RowUp,ECol == ColLeft;
+                        ERow == RowUp,ECol == Col;
+                        ERow == RowUp,ECol == ColRight;
+                        ERow == Row,ECol == ColLeft;
+                        ERow == Row,ECol == ColRight;
+                        ERow == RowDown,ECol == ColLeft;
+                        ERow == RowDown,ECol == Col;
+                        ERow == RowDown,ECol == ColRight
+                    ),
+                    write('Can\'t reach the enemy, you need to go closer !'),nl,!.
+        
+combat  :- !, write('No enemy in sight.'),nl.
+
+
+
+/*PERMAINAN SELESAI*/
+check_game_over :- player_original_health(H), H =< 0, show_credits_lose,
+                quit.
+check_game_over :- enemy_position(_,_),!. %Belum selesai gamenya
+check_game_over :- show_credits_win,
+                quit.
+
+show_credits_win :- write('Game over,you win !'),nl,nl.
+show_credits_lose :- write('YOU LOSE :( '),nl,nl.
+
+show_title :-   %shell(clear),
+                write('    _/_/_/    _/    _/  _/_/_/      _/_/_/'),
+                nl,
+                write('   _/    _/  _/    _/  _/    _/  _/       '),
+                nl,
+                write('  _/_/_/    _/    _/  _/_/_/    _/  _/_/  '),
+                nl,
+                write(' _/        _/    _/  _/    _/  _/    _/   '),
+                nl,
+                write('_/          _/_/    _/_/_/      _/_/_/    '),
+                nl,
+                nl,
+                write('Welcome to the battlefield!'),
+                nl,
+                write('You have been chosen as one of the lucky contestants. Be the last man standing and you will be remembered as one of the victors'),
+                nl,
+                nl.
+
+
+
+reset_game  :-  reset_tiles.
+reset_tiles :-  tile(_,_,_),!,retract(tile(_,_,_)),!,reset_tiles.
+reset_tiles :- !,reset_PP. 
+reset_PP    :-  retractall(player_position(_,_)),reset_PTH.
+reset_PTH  :-  retractall(player_total_health(_)),reset_POA.
+reset_POA  :-  retractall(player_original_health(_)),reset_PAH.
+reset_PAH  :-  retractall(player_armor_health(_)),reset_PEA.
+reset_PEA  :-  retractall(player_equipped_armor(_)),reset_PEW.
+reset_PEW  :-  retractall(player_equipped_weapon(_,_)),reset_PI.
+reset_PI  :-  retractall(player_inventory(_,_)),reset_CI.
+reset_CI  :-  retractall(current_inventory(_)),reset_MI.
+reset_MI  :-  retractall(max_inventory(_)),reset_EP.
+reset_EP  :-  retractall(enemy_position(_,_)),reset_EI.
+reset_EI  :-  retractall(enemy_inventory(_,_,_,_)),reset_EEW. 
+reset_EEW  :-  retractall(enemy_equipped_weapon(_,_,_,_)),reset_ID.
+reset_ID  :-  retractall(item_details(_,_,_,_)),reset_time.
+reset_time  :-  retractall(time(_)),reset_TEP,!.
+reset_time :- !.
+reset_TEP  :-  retractall(temp_enemy_position(_,_)),reset_TEI.
+reset_TEI  :-  retractall(temp_enemy_inventory(_,_,_,_)),reset_TEEW. 
+reset_TEEW  :-  retractall(temp_enemy_equipped_weapon(_,_,_,_)),!.
+
