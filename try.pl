@@ -93,7 +93,7 @@ print_map(12,0) :- nl,nl,!.
 print_map(X,12) :- nl , nl,  NextRow is X+1,!, print_map(NextRow,0).
 print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1,!, print_map(X, NextCol).
 
-print_tile(_,_,X) :- X == 'X', ! ,  write('  X  ').
+print_tile(_,_,X) :- X == 'x', ! ,  write('  x  ').
 print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
 print_tile(Row,Col,_) :- enemy_position(Row,Col), ! , write('  E  ').
 print_tile(Row,Col,_) :- (  item_details(Row,Col,Item,_) ->   
@@ -109,18 +109,18 @@ load_map(_,_,[]) :- !.
 load_map(X,Y,[Head|Tail]) :- assertz(tile(X,Y,Head)), Y1 is Y + 1, load_map(X,Y1,Tail), ! .
 
 
-initial_map_r0 :-  load_map(0,0,['X','X','X','X','X','X','X','X','X','X','X','X']).
-initial_map_r1 :-  load_map(1,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r2 :-  load_map(2,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r3 :-  load_map(3,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r4 :-  load_map(4,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r5 :-  load_map(5,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r6 :-  load_map(6,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r7 :-  load_map(7,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r8 :-  load_map(8,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r9 :-  load_map(9,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r10 :- load_map(10,0,['X','O','O','O','O','O','O','O','O','O','O','X']).
-initial_map_r11 :- load_map(11,0,['X','X','X','X','X','X','X','X','X','X','X','X']).
+initial_map_r0 :-  load_map(0,0,['x','x','x','x','x','x','x','x','x','x','x','x']).
+initial_map_r1 :-  load_map(1,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r2 :-  load_map(2,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r3 :-  load_map(3,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r4 :-  load_map(4,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r5 :-  load_map(5,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r6 :-  load_map(6,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r7 :-  load_map(7,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r8 :-  load_map(8,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r9 :-  load_map(9,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r10 :- load_map(10,0,['x','o','o','o','o','o','o','o','o','o','o','x']).
+initial_map_r11 :- load_map(11,0,['x','x','x','x','x','x','x','x','x','x','x','x']).
 
 
 load_map :- initial_map_r0,
@@ -143,10 +143,10 @@ update_dead_zone :- !.
 
 
 
-update_limit_dead_zone(Row,Col,Res) :- Row == Res, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
-update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Row == Temp, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
-update_limit_dead_zone(Row,Col,Res) :- Col == Res, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
-update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Col == Temp, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'X')).
+update_limit_dead_zone(Row,Col,Res) :- Row == Res, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'x')).
+update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Row == Temp, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'x')).
+update_limit_dead_zone(Row,Col,Res) :- Col == Res, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'x')).
+update_limit_dead_zone(Row,Col,Res) :- Temp is 11 - Res,Col == Temp, retract(tile(Row,Col,_)),assertz(tile(Row,Col,'x')).
 update_limit_dead_zone(_,_,_) :- !.
 
 
@@ -379,11 +379,11 @@ quit    :- write('Exit the game, see ya next time !'),sleep(2),halt.
 /*FUNGSI-FUNGSI DALAM GAME*/
 update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
 
-is_in_dead_zone :- player_position(X,Y), tile(X,Y,Z), Z == 'X', retractall(player_original_health(_)),assertz(player_original_health(0)).
+is_in_dead_zone :- player_position(X,Y), tile(X,Y,Z), Z == 'x', retractall(player_original_health(_)),assertz(player_original_health(0)).
 is_in_dead_zone :- !.
 
 delete_enemies_in_dead_zone  :- enemy_position(Row,Col),
-                                tile(Row,Col,Tile), Tile == 'X', !,
+                                tile(Row,Col,Tile), Tile == 'x', !,
                                 retractall(enemy_position(Row,Col)),
                                 retractall(enemy_equipped_weapon(Row,Col,_,_)),
                                 retractall(enemy_inventory(Row,Col,_,_)).
@@ -425,7 +425,7 @@ is_enemy_attack :-  player_position(Row,Col),enemy_position(Row,Col),
 is_enemy_attack :- !.
 
 print_nsew(Row,Col) :- enemy_position(Row,Col), !, write(' you can hear enemy nearby, prepare yourself.'),nl.
-print_nsew(Row,Col) :- tile(Row,Col,Tile), Tile == 'X', !,  write(' is a dead zone.'),nl.
+print_nsew(Row,Col) :- tile(Row,Col,Tile), Tile == 'x', !,  write(' is a dead zone.'),nl.
 print_nsew(_,_) :- !, write(' is an open field.'),nl.
 
 
@@ -712,7 +712,7 @@ save_facts(FileName)  :-  open(FileName,write,Out),
                           %Player equipped armor
                           (player_equipped_armor(Armor)->
                           write(Out,Armor)
-                          ;write(Out,'V')
+                          ;write(Out,0)
                           ),
                           write(Out,'. '),
                           nl(Out),
@@ -721,7 +721,7 @@ save_facts(FileName)  :-  open(FileName,write,Out),
                           write(Out,W),
                           write(Out,'. '),
                           write(Out,Ammo);
-                          write(Out,'V')
+                          write(Out,0)
                           ),
                           write(Out,'. '),
                           nl(Out),
@@ -756,10 +756,10 @@ save_facts(FileName)  :-  open(FileName,write,Out),
                           write(Out,ListEIV),write(Out,'. '),
                           nl(Out),
                           %Equipped weapon musuh
-                          findall(EER,enemy_inventory(EER,_,_,_),ListEER),
-                          findall(EEC,enemy_inventory(_,EEC,_,_),ListEEC),
-                          findall(EEI,enemy_inventory(_,_,EEI,_),ListEEI),
-                          findall(EEV,enemy_inventory(_,_,_,EEV),ListEEV),
+                          findall(EER,enemy_equipped_weapon(EER,_,_,_),ListEER),
+                          findall(EEC,enemy_equipped_weapon(_,EEC,_,_),ListEEC),
+                          findall(EEI,enemy_equipped_weapon(_,_,EEI,_),ListEEI),
+                          findall(EEV,enemy_equipped_weapon(_,_,_,EEV),ListEEV),
                           write(Out,ListEER),write(Out,'. '),
                           write(Out,ListEEC),write(Out,'. '),
                           write(Out,ListEEI),write(Out,'. '),
@@ -801,6 +801,9 @@ load_enemy_position([H1|T1],[H2|T2]) :- assertz(enemy_position(H1,H2)),load_enem
 load_enemy_inventory([],[],[],[]) :-  !.
 load_enemy_inventory([H1|T1],[H2|T2],[H3|T3],[H4|T4]) :- assertz(enemy_inventory(H1,H2,H3,H4)),load_enemy_inventory(T1,T2,T3,T4),!.
 
+load_enemy_equipped_weapon([],[],[],[]) :-  !.
+load_enemy_equipped_weapon([H1|T1],[H2|T2],[H3|T3],[H4|T4]) :- assertz(enemy_equipped_weapon(H1,H2,H3,H4)),load_enemy_equipped_weapon(T1,T2,T3,T4),!.
+
 load_item_details([],[],[],[]) :-  !.
 load_item_details([H1|T1],[H2|T2],[H3|T3],[H4|T4]) :- assertz(item_details(H1,H2,H3,H4)),load_item_details(T1,T2,T3,T4),!.
 
@@ -820,17 +823,13 @@ load_facts(FileName)  :-    open(FileName,read,In),
                             assertz(player_original_health(POH)),
                             read(In,PAH),
                             assertz(player_armor_health(PAH)),
-                            read(In,PTH),
-                            assertz(player_total_health(PTH)),
-                            read(In,PTH),
-                            assertz(player_total_health(PTH)),
-                            read(In,Armor),
-                            (Armor \= V->
-                                assertz(player_equipped_armor(Armor));
+                            read(In,PEA),
+                            (PEA \= 0->
+                                assertz(player_equipped_armor(PEA));
                                 true %kosong
                             ),
                             read(In,PW),
-                            (PW \= V ->
+                            (PW \= 0 ->
                                 read(In,PV),
                                 assertz(player_equipped_weapon(PW,PV));
                                 true %kosong
@@ -846,6 +845,9 @@ load_facts(FileName)  :-    open(FileName,read,In),
                             read(In,EIR),read(In,EIC),
                             read(In,EIN),read(In,EIV),
                             load_enemy_inventory(EIR,EIC,EIN,EIV),
+                            read(In,EER),read(In,EEC),
+                            read(In,EEN),read(In,EEV),
+                            load_enemy_equipped_weapon(EER,EEC,EEN,EEV),
                             read(In,IR),read(In,IC),
                             read(In,IN),read(In,IV),
                             load_item_details(IR,IC,IN,IV),
@@ -854,6 +856,8 @@ load_facts(FileName)  :-    open(FileName,read,In),
                             close(In),write('Load is success'),!.
 		
 load_facts(_) :- write('Load Failed. Please try again'),!. 
+
+
 
 
 
