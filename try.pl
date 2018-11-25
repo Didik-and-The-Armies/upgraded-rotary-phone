@@ -7,15 +7,15 @@
 :- dynamic(player_position/2).
 :- dynamic(player_total_health/1). %original health + armor_health
 :- dynamic(player_original_health/1).
-:- dynamic(player_armor_health/1). %yang di equip , 0 kalo gaada
-:- dynamic(player_equipped_armor/1).
+:- dynamic(player_armor_health/1). %health yang di equip , 0 kalo gaada
+:- dynamic(player_equipped_armor/1). 
 :- dynamic(player_equipped_weapon/2). %Nama dan sisa peluru
 :- dynamic(player_inventory/2).
 /* Keterangan : */
 %player_inventory(<weapon_name>,<weapon_ammo>)
 %player_inventory(<armor_name>,<armor_remaining_health>)
 %player_inventory(<medicine_name>,<medicine_healing_capacity>)
-%player_inventory(<ammo>,<weapon_ammo>) sementara anggep peluru itu universal
+%player_inventory(<ammo>,<weapon_ammo>) peluru itu universal
 :- dynamic(current_inventory/1).
 :- dynamic(max_inventory/1).
 
@@ -55,7 +55,7 @@ item(bandage,medicine,14).
 item(medkit,medicine,15).
 item(magazine,ammo,16).
 
-%Fakta kepasitias peluru setiap senjata
+%Fakta kapasitias peluru setiap senjata
 damage(m416,30).
 damage(scar,35).
 damage(akm,30).
@@ -158,6 +158,15 @@ move_player(Direction) :-   Direction == 'w' -> !, is_enemy_attack,player_positi
 
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
+start :-    shell(clear),
+            show_title,
+            write('What do you wanna do ? [new/load/quit] \n'),
+			read(Command),
+			(
+				Command == 'load' -> write('Input the file name\nFilename : '),nl ,read(FileName) , load_facts(FileName), nl, nl, help
+			   ;Command == 'new' -> initiliaze_game, nl, nl
+			   ;Command == 'quit' -> quit
+			).
 
 n :-    shell(clear),update_time,update_dead_zone, move_player(n),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
 s :-    shell(clear),update_time,update_dead_zone, move_player(s),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
@@ -194,7 +203,7 @@ look :- shell(clear),
         look_item_around(B,Col),
         look_item_around(B,D).
         
-start :-    show_title,
+initiliaze_game :-    show_title,
             help,
             load_map,
             init_player,
@@ -207,7 +216,7 @@ start :-    show_title,
 help :-     %shell(clear),
             write('Available commands:'),
             nl,
-            write('  start. -- start the game!'),
+            write('  initiliaze_game. -- initiliaze_game the game!'),
             nl,
             write('  help. -- show available commands'),
             nl,
@@ -254,8 +263,8 @@ status :- %shell(clear),
           show_inventory,nl,nl.
 
 take(Item)  :-  player_position(X,Y),item_details(X,Y,Item,Val),
-                current_inventory(S),
-                S < 10,!,
+                current_inventory(S),max_inventory(M),
+                S < M,!,
                 retract(item_details(X,Y,Item,Val)),
                 assertz(player_inventory(Item,Val)),
                 S1 is S + 1,
@@ -263,7 +272,7 @@ take(Item)  :-  player_position(X,Y),item_details(X,Y,Item,Val),
                 assertz(current_inventory(S1)),!,look,nl,
                 format('You take ~w.',[Item]).
 
-take(_)     :-  current_inventory(S), S == 10, !, write('Your inventory is full !'),nl.
+take(_)     :-  current_inventory(S),max_inventory(M), S == M, !, write('Your inventory is full !'),nl.
 take(Item)  :-  !,
                 format('No ~w can be found.',[Item]),nl. 
 
@@ -334,7 +343,7 @@ use(Item)   :-  shell(clear),
                     retractall(current_inventory(_)),
                     X3 is X2 - 1,
                     assertz(current_inventory(X3)),
-                    !,write(Item),nl,write(' equipped, ready to battle?'),nl
+                    !,write(Item),write(' equipped, ready to battle?'),nl
                 ;
                 item(Item,medicine,_)-> heal(Val),
                                       retract(player_inventory(Item,Val)),
@@ -360,7 +369,12 @@ use(Item)   :- !, format('No ~w in your inventory.',[Item]),nl.
 %Asumssi 2 : musuh harus bersenjata
 attack :- combat, check_game_over.
 
-quit :- reset_game,start.
+
+save(X)   :-  save_facts(X).
+%load(X)   :-  load_facts(X).
+
+restart :- reset_game,initiliaze_game.
+quit    :- write('Exit the game, see ya next time !'),sleep(2),halt.
 
 /*FUNGSI-FUNGSI DALAM GAME*/
 update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
@@ -614,12 +628,12 @@ combat  :- !, write('No enemy in sight.'),nl.
 
 /*PERMAINAN SELESAI*/
 check_game_over :- player_original_health(H), H =< 0, show_credits_lose,
-                quit.
+                restart.
 check_game_over :- enemy_position(_,_),!. %Belum selesai gamenya
 check_game_over :- show_credits_win,
-                quit.
+                restart.
 
-show_credits_win :- write('Game over,you win !'),nl,nl.
+show_credits_win :- write('WINNER WINNER CHICKEN DINNER !'),nl,nl.
 show_credits_lose :- write('YOU LOSE :( '),nl,nl.
 
 show_title :-   %shell(clear),
@@ -640,7 +654,7 @@ show_title :-   %shell(clear),
                 nl,
                 nl.
 
-
+/*PROSEDUR RESET FAKTA DI GAME*/
 
 reset_game  :-  reset_tiles.
 reset_tiles :-  tile(_,_,_),!,retract(tile(_,_,_)),!,reset_tiles.
@@ -663,4 +677,187 @@ reset_time :- !.
 reset_TEP  :-  retractall(temp_enemy_position(_,_)),reset_TEI.
 reset_TEI  :-  retractall(temp_enemy_inventory(_,_,_,_)),reset_TEEW. 
 reset_TEEW  :-  retractall(temp_enemy_equipped_weapon(_,_,_,_)),!.
+
+
+/* PROSEDUR SAVE DAN LOAD FAKTA DARI FILE */
+
+/*SAVE*/
+
+save_facts(FileName)  :-  open(FileName,write,Out),
+                          %Save Tile
+                          findall(Row,tile(Row,_,_),ListTileRow),
+                          findall(Col,tile(_,Col,_),ListTileCol),
+                          findall(Tile,tile(_,_,Tile),ListTileTile),
+                          write(Out,ListTileRow),write(Out,'. '),
+                          write(Out,ListTileCol),write(Out,'. '),
+                          write(Out,ListTileTile),write(Out,'. '),
+                          nl(Out),
+                          %Save Player Position
+                          player_position(PRow,PCol),
+                          write(Out,PRow), write(Out,'. '),
+                          write(Out,PCol), write(Out,'. '),
+                          nl(Out),
+                          %Save player total health
+                          player_total_health(TH),
+                          write(Out,TH),write(Out,'. '),
+                          nl(Out),
+                          %Save player original health
+                          player_original_health(OH),
+                          write(Out,OH),write(Out,'. '),
+                          nl(Out),
+                          %Armor Health
+                          player_armor_health(AH),
+                          write(Out,AH),write(Out,'. '),
+                          nl(Out),
+                          %Player equipped armor
+                          (player_equipped_armor(Armor)->
+                          write(Out,Armor)
+                          ;write(Out,'V')
+                          ),
+                          write(Out,'. '),
+                          nl(Out),
+                          %Player equipped weapon
+                          (player_equipped_weapon(W,Ammo)->
+                          write(Out,W),
+                          write(Out,'. '),
+                          write(Out,Ammo);
+                          write(Out,'V')
+                          ),
+                          write(Out,'. '),
+                          nl(Out),
+                          %Player inventory
+                          findall(PI,player_inventory(PI,_),ListItem),
+                          findall(PV,player_inventory(_,PV),ListValue),
+                          write(Out,ListItem),write(Out,'. '),
+                          write(Out,ListValue),write(Out,'. '),
+                          nl(Out),
+                          %Save kapasitas inventori sekarang
+                          current_inventory(CI),
+                          write(Out,CI),write(Out,'. '),
+                          nl(Out),
+                          %Save kapasitas inventori maksimum
+                          max_inventory(MI),
+                          write(Out,MI),write(Out,'. '),
+                          nl(Out),
+                          %Koordinat musuh
+                          findall(ER,enemy_position(ER,_),ListERow),
+                          findall(EC,enemy_position(_,EC),ListECol),
+                          write(Out,ListERow),write(Out,'. '),
+                          write(Out,ListECol),write(Out,'. '),
+                          nl(Out),
+                          %Inventori musuh
+                          findall(EIR,enemy_inventory(EIR,_,_,_),ListEIR),
+                          findall(EIC,enemy_inventory(_,EIC,_,_),ListEIC),
+                          findall(EII,enemy_inventory(_,_,EII,_),ListEII),
+                          findall(EIV,enemy_inventory(_,_,_,EIV),ListEIV),
+                          write(Out,ListEIR),write(Out,'. '),
+                          write(Out,ListEIC),write(Out,'. '),
+                          write(Out,ListEII),write(Out,'. '),
+                          write(Out,ListEIV),write(Out,'. '),
+                          nl(Out),
+                          %Equipped weapon musuh
+                          findall(EER,enemy_inventory(EER,_,_,_),ListEER),
+                          findall(EEC,enemy_inventory(_,EEC,_,_),ListEEC),
+                          findall(EEI,enemy_inventory(_,_,EEI,_),ListEEI),
+                          findall(EEV,enemy_inventory(_,_,_,EEV),ListEEV),
+                          write(Out,ListEER),write(Out,'. '),
+                          write(Out,ListEEC),write(Out,'. '),
+                          write(Out,ListEEI),write(Out,'. '),
+                          write(Out,ListEEV),write(Out,'. '),
+                          nl(Out),
+                          %Daftar Item di map
+                          findall(IR,item_details(IR,_,_,_),ListIR),
+                          findall(IC,item_details(_,IC,_,_),ListIC),
+                          findall(II,item_details(_,_,II,_),ListII),
+                          findall(IV,item_details(_,_,_,IV),ListIV),
+                          write(Out,ListIR),write(Out,'. '),
+                          write(Out,ListIC),write(Out,'. '),
+                          write(Out,ListII),write(Out,'. '),
+                          write(Out,ListIV),write(Out,'. '),
+                          nl(Out),
+                          %Waktu
+                          time(Time),
+                          write(Out,Time),
+                          write(Out,'. '),
+                          nl(Out),
+                          close(Out),write('Your data has been saved.'),!.
+
+%kalo gak valid
+save_facts(_) :- write('Save is Failed. Please try again'),!.
+
+/*LOAD*/
+
+
+%Prosedur pembantu
+load_tile([],[],[]) :-  !.
+load_tile([H1|T1],[H2|T2],[H3|T3]) :- assertz(tile(H1,H2,H3)),load_tile(T1,T2,T3),!.
+
+load_player_inventory([],[]) :-  !.
+load_player_inventory([H1|T1],[H2|T2]) :- assertz(player_inventory(H1,H2)),load_player_inventory(T1,T2),!.
+
+load_enemy_position([],[]) :-  !.
+load_enemy_position([H1|T1],[H2|T2]) :- assertz(enemy_position(H1,H2)),load_enemy_position(T1,T2),!.
+
+load_enemy_inventory([],[],[],[]) :-  !.
+load_enemy_inventory([H1|T1],[H2|T2],[H3|T3],[H4|T4]) :- assertz(enemy_inventory(H1,H2,H3,H4)),load_enemy_inventory(T1,T2,T3,T4),!.
+
+load_item_details([],[],[],[]) :-  !.
+load_item_details([H1|T1],[H2|T2],[H3|T3],[H4|T4]) :- assertz(item_details(H1,H2,H3,H4)),load_item_details(T1,T2,T3,T4),!.
+
+
+load_facts(FileName)  :-    open(FileName,read,In),
+                            shell(clear),
+                            %reset_game,%penting,supaya gak ada double facts
+                            read(In,ListTileRow),
+                            read(In,ListTileCol),
+                            read(In,ListTileTile),
+                            load_tile(ListTileRow,ListTileCol,ListTileTile),
+                            read(In,PRow),read(In,PCol),
+                            assertz(player_position(PRow,PCol)),
+                            read(In,PTH),
+                            assertz(player_total_health(PTH)),
+                            read(In,POH),
+                            assertz(player_original_health(POH)),
+                            read(In,PAH),
+                            assertz(player_armor_health(PAH)),
+                            read(In,PTH),
+                            assertz(player_total_health(PTH)),
+                            read(In,PTH),
+                            assertz(player_total_health(PTH)),
+                            read(In,Armor),
+                            (Armor \= V->
+                                assertz(player_equipped_armor(Armor));
+                                true %kosong
+                            ),
+                            read(In,PW),
+                            (PW \= V ->
+                                read(In,PV),
+                                assertz(player_equipped_weapon(PW,PV));
+                                true %kosong
+                            ),
+                            read(In,ListItem),read(In,ListVal),
+                            load_player_inventory(ListItem,ListVal),
+                            read(In,CurrInv),
+                            assertz(current_inventory(CurrInv)),
+                            read(In,MaxInv),
+                            assertz(max_inventory(MaxInv)),
+                            read(In,ERow),read(In,ECol),
+                            load_enemy_position(ERow,ECol),
+                            read(In,EIR),read(In,EIC),
+                            read(In,EIN),read(In,EIV),
+                            load_enemy_inventory(EIR,EIC,EIN,EIV),
+                            read(In,IR),read(In,IC),
+                            read(In,IN),read(In,IV),
+                            load_item_details(IR,IC,IN,IV),
+                            read(In,Time),
+                            assertz(time(Time)),
+                            close(In),write('Load is success'),!.
+		
+load_facts(_) :- write('Load Failed. Please try again'),!. 
+
+
+
+
+
+
 
