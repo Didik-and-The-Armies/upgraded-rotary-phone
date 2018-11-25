@@ -12,8 +12,8 @@ Fitur yang belum ada :
 
 1. (DONE)Modar kalo nyentuh deadzone
 2. (DONE) Attack, tinggal bikin story biar gak garing.
-3. Save
-4. Load
+3. (DONE)Save
+4. (DONE)Load
 5. Interface bahasa minang
 6. (DONE) Kalo gerak dari tile yang ada musuhnya (kabur), diserang dan health berkurang
 7. Validasi input pemain
