@@ -699,8 +699,8 @@ combat  :- !, write('No enemy in sight.'),nl.
 /*INISIALISASI*/
 init_player :-  random(1,10,Row),random(1,10,Col),
                 assertz(player_position(Row,Col)),
-                assertz(player_total_health(75)),
-                assertz(player_original_health(75)),
+                assertz(player_total_health(100)),
+                assertz(player_original_health(100)),
                 assertz(player_armor_health(0)).
                 %assertz(player_equipped_weapon(sks,5)).
                 
@@ -710,7 +710,7 @@ init_inventory :- assertz(current_inventory(0)),assertz(max_inventory(3)).
 
 init_item   :-  random(1,11,ItemNumber),generate_items(ItemNumber).
 
-init_enemy  :-  random(1,11,EnemyNumber),generate_enemy(EnemyNumber).
+init_enemy  :-  random(4,11,EnemyNumber),generate_enemy(EnemyNumber).
 
 
 
