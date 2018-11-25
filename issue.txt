@@ -25,7 +25,7 @@ Fitur yang belum ada :
 13. Kalo pake command LOOK,STATUS, pas ada musuh musuhnya nyerang gak?
 14. (DONE)Game Over
 15. Random Supply,
-16. Bag Upgrade
+16. (DONE)Bag Upgrade
 ...
 
 Last. Rapihin program, samain formatnya kayak di command listing biar rapih enak diliat
