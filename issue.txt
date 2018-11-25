@@ -4,11 +4,11 @@ Bug yang ketemu :
 
 1. Kalo mau  USE senjata <X>, dan di inventorinya ada lebih dari 1 <X>, dia ngeluarin "true?" (solved)
 2. ATTACK musuh, ada > 1 musuh di tile yang sama, keluar "true?" (solved)
-3. 
+3. Habis kalah, balik ke menu awal, keluar "true?"
 
 Fitur yang belum ada :
 
-1. Modar kalo nyentuh deadzone
+1. (DONE)Modar kalo nyentuh deadzone
 2. (DONE) Attack, tinggal bikin story biar gak garing.
 3. Save
 4. Load
@@ -21,7 +21,9 @@ Fitur yang belum ada :
 11. (DONE) Random
 12. Tipe Terrain ketentuannya gimana ada yang tau?
 13. Kalo pake command LOOK,STATUS, pas ada musuh musuhnya nyerang gak?
-14. Game Over
+14. (DONE)Game Over
+15. Random Supply,
+16. Bag Upgrade
 ...
 
 Last. Rapihin program, samain formatnya kayak di command listing biar rapih enak diliat
@@ -35,5 +37,7 @@ Asumsi :
 4. Kalo di 1 tile ada > 1 musuh, yang nyerang cuma 1 doang
 5. Musuh gak gerak (Ternyata harus gerak wkwk)
 6. Menurut kalian kalo kayak ATTACK gitu TIME harusnya  nambah gak?
+7. Saat n, s, e, w, yang dilakukan program adalah mendeteksi musuh dan terrain, TIDAK bisa mendeteksi item.
+8. Saat look, yang dilakukan program adalah mendeteksi item pada radius 1 tile di sekitarnya, TIDAK bisa mendeteksi musuh,meskipun bersebelahan atau dalam tile yang sama.
 
 
