@@ -231,15 +231,18 @@ look :- shell(clear),
         look_item_around(B,Col),
         look_item_around(B,D).
         
-initiliaze_game :-    show_title,
-            help,
-            load_map,
-            init_player,
-            init_time,
-            init_inventory,
-            init_item,
-            init_enemy,
-            look_enemy.
+initiliaze_game :-      write('\nLoading game \n'),sleep(2),
+                        write('\nLet\'s Play Battle Royal !\n'),sleep(1),
+                        %shell(clear),
+                        %show_title,
+                        help,
+                        load_map,
+                        init_player,
+                        init_time,
+                        init_inventory,
+                        init_item,
+                        init_enemy,
+                        look_enemy.
     
 help :-     %shell(clear),
             write('Available commands:'),
@@ -380,7 +383,14 @@ use(Item)   :-  %shell(clear),
                                       current_inventory(C),
                                       retractall(current_inventory(_)),
                                       C1 is C - 1,
-                                      assertz(current_inventory(C1)), status, 
+                                      assertz(current_inventory(C1)), status,
+                                      (
+                                          Item == tolakangin -> 
+                                            write('\nOrang pintar \n'),sleep(2),
+                                            write('\nMinum Tolak Angin !\n\n'),sleep(2)
+                                            ;
+                                            true
+                                      ), 
                                       !,write(Item),write(' used, now you feel better.'),nl
                 ;
                 item(Item,ammo,_) ->(
@@ -743,7 +753,7 @@ show_credits_win :- write('\nAfter a hard fought battle, finally you stand as lo
                     write('\n\n\nBelajar buat UAS..\n'),sleep(2),!.
 show_credits_lose :- write('\nYou lose..\n'),sleep(2),
                      write('\nCupu cok\n'),sleep(1),
-                     write('\nMending belajar sono buat uas\n'),sleep(1),!.
+                     write('\nDaripada kamu bersedih mending belajar sono buat UAS\n\n'),sleep(1),!.
 
 show_credits_team :- %shell(clear),
                      write('\nCREATED BY : \n\n'),
