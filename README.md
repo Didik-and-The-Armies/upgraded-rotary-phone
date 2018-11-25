@@ -1,6 +1,5 @@
 # upgraded-rotary-phone
 
-##Battle-royale with Prolog
 
 ## Get Started
 - Start prolog, e.g. GNU Prolog, SWI Prolog.
@@ -59,9 +58,7 @@ O = ammo	X = inaccessible
 
 Have Fun!
 
-
-
-##CREDITS 
+CREDITS 
 
 Created by :
 
