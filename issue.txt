@@ -8,7 +8,7 @@ Bug yang ketemu :
 
 Fitur yang belum ada :
 
-1. (DONE) Modar kalo nyentuh deadzone
+1. Modar kalo nyentuh deadzone
 2. (DONE) Attack, tinggal bikin story biar gak garing.
 3. Save
 4. Load
