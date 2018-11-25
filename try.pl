@@ -284,6 +284,7 @@ help :-     %shell(clear),
             nl.
 
 status :- %shell(clear),
+           nl,
           show_health,nl,
           show_armor,nl,
           show_weapon,nl,
@@ -388,7 +389,9 @@ use(Item)   :-  %shell(clear),
                                     current_inventory(X),
                                     retractall(current_inventory(_)),
                                     X1 is X - 1,
-                                    assertz(current_inventory(X1)), status, 
+                                    assertz(current_inventory(X1)),
+                                    retract(player_inventory(Item,_)),
+                                    status, 
                                     !,write(Item),write(' used, ready to some shooting?'),nl
                 ;
                 item(Item,bag,_) -> value(Item,Capacity),
@@ -728,8 +731,14 @@ check_game_over :- enemy_position(_,_),!. %Belum selesai gamenya
 check_game_over :- show_credits_win,
                 restart.
 
-show_credits_win :- write('WINNER WINNER CHICKEN DINNER !'),nl,nl.
-show_credits_lose :- write('YOU LOSE :( '),nl,nl.
+show_credits_win :- write('\nAfter a hard fought battle, finally you stand as lone survivor of the war \n'),sleep(3),
+                    write('\nAfter this day, the world remember you as.. \n'),sleep(2),
+                    write('\nWINNER WINNER CHICKEN DINNER\n'),sleep(2),
+                    write('\nCongrats and don\'t forget..\n'),sleep(5),
+                    write('\n\n\nBelajar buat UAS..\n'),sleep(2),!.
+show_credits_lose :- write('\nYou lose..\n'),sleep(2),
+                     write('\nCupu cok\n'),sleep(1),
+                     write('\nMending belajar sono buat uas\n'),sleep(1),!.
 
 show_title :-   %shell(clear),
                 write('    _/_/_/    _/    _/  _/_/_/      _/_/_/'),
@@ -881,8 +890,8 @@ save_facts(FileName)  :-  open(FileName,write,Out),
                           write(Out,'. '),
                           nl(Out),
                           close(Out),
-                          write('\n Saving your file\n'),sleep(2),
-                          write('\n Finish loading files.. \n'),sleep(2),
+                          write('\nSaving your file\n'),sleep(2),
+                          write('\nFinish loading files.. \n'),sleep(2),
                           write('\nYour data has been saved.\n'),!.
 
 %kalo gak valid
@@ -957,9 +966,9 @@ load_facts(FileName)  :-    open(FileName,read,In),
                             read(In,Time),
                             assertz(time(Time)),
                             close(In),
-                            write('\n Loading your files \n'),sleep(2),
-                            write('\n Dikit lagi libur boss! \n'),sleep(2),
-                            write('\n Load successful, opening game \n'),sleep(1),!.
+                            write('\nLoading your files \n'),sleep(2),
+                            write('\nDikit lagi libur boss! \n'),sleep(2),
+                            write('\nLoad successful, opening game..\n'),sleep(1),!.
 
 		
 load_facts(_) :- write('Load Failed. Please try again'),!. 
