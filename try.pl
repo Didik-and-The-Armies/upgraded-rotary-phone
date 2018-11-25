@@ -21,7 +21,7 @@
 
 
 :- dynamic(enemy_position/2).
-:- dynamic(enemy_inventory/2). %Formatnya sama kayak yang player
+:- dynamic(enemy_inventory/4). 
 :- dynamic(enemy_equipped_weapon/4). %posisi,Nama dan sisa peluru
 %Musuh sekali attack langsung modar sementara, dan gapake armor
 :- dynamic(player_equipped_weapon/1).
@@ -165,12 +165,14 @@ move_player(Direction) :-   Direction == 's' -> !, is_enemy_attack,player_positi
 move_player(Direction) :-   Direction == 'e' -> !, is_enemy_attack,player_position(Row,Col), Col1 is Col+1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)), is_in_dead_zone.
 move_player(Direction) :-   Direction == 'w' -> !, is_enemy_attack,player_position(Row,Col), Col1 is Col-1, retractall(player_position(_,_)), assertz(player_position(Row,Col1)), is_in_dead_zone.
 
+
+
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
 
-n :-    shell(clear),update_time,update_dead_zone, move_player(n),!,/*map*/look_nsew.
-s :-    shell(clear),update_time,update_dead_zone, move_player(s),!,/*map*/look_nsew.
-e :-    shell(clear),update_time,update_dead_zone, move_player(e),!,/*map*/look_nsew.
-w :-    shell(clear),update_time,update_dead_zone, move_player(w),!,/*map*/look_nsew.
+n :-    shell(clear),update_time,update_dead_zone, move_player(n),!, delete_enemies_in_dead_zone, /*map*/look_nsew.
+s :-    shell(clear),update_time,update_dead_zone, move_player(s),!, delete_enemies_in_dead_zone,/*map*/look_nsew.
+e :-    shell(clear),update_time,update_dead_zone, move_player(e),!, delete_enemies_in_dead_zone,/*map*/look_nsew.
+w :-    shell(clear),update_time,update_dead_zone, move_player(w),!, delete_enemies_in_dead_zone,/*map*/look_nsew.
 
 map:-  shell(clear),print_map(0,0),!.
 
@@ -305,7 +307,8 @@ drop(Item)  :-  !, nl,
 
 
 %Asumsi kalo ada barang yang lagi diequip langsung ditaro di inventory
-use(Item)   :- player_inventory(Item,Val),!,
+use(Item)   :-  shell(clear),
+                player_inventory(Item,Val),!,
             (
                 item(Item,armor)->
                     (player_equipped_armor(Armor)->
@@ -355,7 +358,7 @@ use(Item)   :- player_inventory(Item,Val),!,
                     retractall(current_inventory(_)),
                     X3 is X2 - 1,
                     assertz(current_inventory(X3)),
-                    !,write(Item),write(' equipped, ready to battle?'),nl
+                    !,write(Item),nl,write(' equipped, ready to battle?'),nl
                 ;
                 item(Item,medicine)-> heal(Val),
                                       retract(player_inventory(Item,Val)),
@@ -377,7 +380,7 @@ use(Item)   :- player_inventory(Item,Val),!,
 use(Item)   :- !, format('No ~w in your inventory.',[Item]),nl.
 
 
-%Asumsi 1: semua musuh yang diserang langsung mati, karena dibolehin di spek tubes.
+%Asumsi 1: semua musuh yang diserang langsung mati.
 %Asumssi 2 : musuh harus bersenjata
 attack  :-  player_position(Row,Col),enemy_position(Row,Col),
             player_equipped_weapon(PW,Ammo),
@@ -406,7 +409,7 @@ attack  :-  player_position(Row,Col),enemy_position(Row,Col),
             retract(enemy_position(Row,Col)),
             damage(EW,AfterEAmmo),
             assertz(item_details(Row,Col,EW,AfterEAmmo)),
-            forall(enemy_inventory(_,_),(enemy_inventory(Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Item,Val)))),!.
+            forall(enemy_inventory(_,_,_,_),(enemy_inventory(Row,Col,Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Row,Col,Item,Val)))),!.
 
 attack  :-  player_position(Row,Col),enemy_position(Row,Col),!,
             (
@@ -430,7 +433,7 @@ attack  :-  player_position(Row,Col),
                 ERow == RowDown,ECol == Col;
                 ERow == RowDown,ECol == ColRight
             ),
-            write('Can\'t reach the enemy, you need to go closer !'),nl.
+            write('Can\'t reach the enemy, you need to go closer !'),nl,!.
 
 attack  :- !, write('No enemy in sight.'),nl.
 
@@ -442,6 +445,16 @@ update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
 
 is_in_dead_zone :- player_position(X,Y), tile(X,Y,Z), Z == 'X', retractall(player_original_health(_)),assertz(player_original_health(0)).
 is_in_dead_zone :- !.
+
+delete_enemies_in_dead_zone  :- enemy_position(Row,Col),
+                                tile(Row,Col,Tile), Tile == 'X', !,
+                                retractall(enemy_position(Row,Col)),
+                                retractall(enemy_equipped_weapon(Row,Col,_,_)),
+                                retractall(enemy_inventory(Row,Col,_,_)).
+
+delete_enemies_in_dead_zone  :- !.
+
+
 
 
 look_nsew :- player_position(Row,Col),
@@ -537,11 +550,15 @@ init_item   :-  assertz(item_details(1,1,grenade,1)),
                 assertz(item_details(5,5,spetnaz,40)),
                 assertz(item_details(5,5,bandage,30)).
 
-init_enemy  :-  assertz(enemy_position(6,5)),
+init_enemy  :-  assertz(enemy_position(1,1)),
+                assertz(enemy_equipped_weapon(1,1,bazooka,1)),
+                assertz(enemy_inventory(1,1,spetnaz,30)),
+                assertz(enemy_position(6,5)),
                 assertz(enemy_equipped_weapon(6,5,sks,5)),
-                assertz(enemy_inventory(bandage,30)),
+                assertz(enemy_inventory(6,5,bandage,30)),
+                assertz(enemy_inventory(6,5,bandage,30)),
                 assertz(enemy_position(6,5)),
                 assertz(enemy_equipped_weapon(6,5,pistol,1)),
-                assertz(enemy_inventory(medkit,30)).
+                assertz(enemy_inventory(6,5,medkit,30)).
 
 
