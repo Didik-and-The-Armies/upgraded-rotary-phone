@@ -15,10 +15,10 @@ Fitur yang belum ada :
 5. Interface bahasa minang
 6. (DONE) Kalo gerak dari tile yang ada musuhnya (kabur), diserang dan health berkurang
 7. Validasi input pemain
-8. Musuh modar kalo kena deadzone
+8. (DONE) Musuh modar kalo kena deadzone
 9. Attack masih garing
-10. Musuh bisa gerak?
-11. Random
+10. (DONE)Musuh bisa gerak
+11. (DONE) Random
 12. Tipe Terrain ketentuannya gimana ada yang tau?
 13. Kalo pake command LOOK,STATUS, pas ada musuh musuhnya nyerang gak?
 14. Game Over
@@ -31,8 +31,9 @@ Asumsi :
 
 1. Musuh sekali diserang langsung mati 
 2. Musuh selalu bisa nyerang, gaada pengecekan peluru, jadi pas diassign weapon minimal harus ada pelurunya 1.
-3. Ammo Musuh gak berkurang setealh nembak.
+3. Ammo Musuh gak berkurang setelah nembak.
 4. Kalo di 1 tile ada > 1 musuh, yang nyerang cuma 1 doang
-5. Musuh gak gerak
+5. Musuh gak gerak (Ternyata harus gerak wkwk)
+6. Menurut kalian kalo kayak ATTACK gitu TIME harusnya  nambah gak?
 
 
