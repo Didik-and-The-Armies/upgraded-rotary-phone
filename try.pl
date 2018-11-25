@@ -47,25 +47,24 @@ max_inventory(10).
 
 /*ITEM YANG ADA PADA GAME */
 %Weapon
-item(m416,weapon).
-item(scar,weapon).
-item(akm,weapon).
-item(ump9,weapon).
-item(shotgun,weapon).
-item(sks,weapon).
-item(pistol,weapon).
-item(sniper,weapon).
-item(bazooka,weapon).
-item(grenade,weapon).
+item(m416,weapon,1).
+item(scar,weapon,2).
+item(akm,weapon,3).
+item(ump9,weapon,4).
+item(shotgun,weapon,5).
+item(sks,weapon,6).
+item(pistol,weapon,7).
+item(sniper,weapon,8).
+item(bazooka,weapon,9).
+item(grenade,weapon,10).
 
-item(kutang,armor).
-item(helm,armor).
-item(kevlar,armor).
-item(spetnaz,armor).
+item(helm,armor,11).
+item(kevlar,armor,12).
+item(spetnaz,armor,13).
 
-item(bandage,medicine).
-item(medkit,medicine).
-item(magazine,ammo).
+item(bandage,medicine,14).
+item(medkit,medicine,15).
+item(magazine,ammo,16).
 
 %Fakta kepasitias peluru setiap senjata
 ammo(m416,7).
@@ -90,7 +89,6 @@ damage(sniper,80).
 damage(bazooka,100).
 damage(grenade,70).
 
-protection(kutang,0).
 protection(helm,10).
 protection(kevlar,20).
 protection(spetnaz,40).
@@ -107,10 +105,10 @@ print_tile(_,_,X) :- X == 'X', ! ,  write('  X  ').
 print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
 print_tile(Row,Col,_) :- enemy_position(Row,Col), ! , write('  E  ').
 print_tile(Row,Col,_) :- (  item_details(Row,Col,Item,_) ->   
-                                (   item(Item,weapon) -> write('  W  ');
-                                    item(Item,armor) -> write('  A  ');
-                                    item(Item,medicine) -> write('  M  ');
-                                    item(Item,ammo) -> write('  O  ')
+                                (   item(Item,weapon,_) -> write('  W  ');
+                                    item(Item,armor,_) -> write('  A  ');
+                                    item(Item,medicine,_) -> write('  M  ');
+                                    item(Item,ammo,_) -> write('  O  ')
                                 );
                             write('  _  ')
                          ). 
@@ -310,7 +308,7 @@ drop(Item)  :-  !, nl,
 use(Item)   :-  shell(clear),
                 player_inventory(Item,Val),!,
             (
-                item(Item,armor)->
+                item(Item,armor,_)->
                     (player_equipped_armor(Armor)->
                                 (retractall(player_equipped_armor(_)),
                                  player_armor_health(H),
@@ -339,7 +337,7 @@ use(Item)   :-  shell(clear),
                     assertz(current_inventory(X3)),
                     !,write(Item),write(' equipped.'),nl
                 ;
-                item(Item,weapon)-> /*ISSUE*/
+                item(Item,weapon,_)->
                     (player_equipped_weapon(Weapon,Bullet)->
                                 retractall(player_equipped_weapon(Weapon,Bullet)),
                                  assertz(player_inventory(Weapon,Bullet)),
@@ -360,7 +358,7 @@ use(Item)   :-  shell(clear),
                     assertz(current_inventory(X3)),
                     !,write(Item),nl,write(' equipped, ready to battle?'),nl
                 ;
-                item(Item,medicine)-> heal(Val),
+                item(Item,medicine,_)-> heal(Val),
                                       retract(player_inventory(Item,Val)),
                                       current_inventory(C),
                                       retractall(current_inventory(_)),
@@ -368,7 +366,7 @@ use(Item)   :-  shell(clear),
                                       assertz(current_inventory(C1)),
                                       !,write(Item),write(' used, now you feel better.'),nl
                 ;
-                item(Item,ammo) -> retract(player_equipped_weapon(W,B)),
+                item(Item,ammo,_) -> retract(player_equipped_weapon(W,B)),
                                    B1 is B+Val,
                                    assertz(player_equipped_weapon(W,B1)),
                                    current_inventory(X),
@@ -468,7 +466,7 @@ look_nsew :- player_position(Row,Col),
 look_enemy :- forall(enemy_position(Row,Col),(player_position(Row,Col)->write('Enemy spotted! Get ready for combat or run !'),nl,!;!)).
 
 is_enemy_attack :-  player_position(Row,Col),enemy_position(Row,Col),
-                    enemy_equipped_weapon(_,_,EW,_),
+                    enemy_equipped_weapon(Row,Col,EW,_),
                     damage(EW,ED),
                     player_total_health(TH),player_armor_health(AA),player_original_health(OA),
                     retractall(player_total_health(_)),retractall(player_armor_health(_)),retractall(player_original_health(_)),
@@ -495,10 +493,10 @@ print_nsew(_,_) :- !, write(' is an open field.'),nl.
 
 look_item_around(Row, Col) :- forall(item_details(Row,Col,Item,Val),
                                         (
-                                            item(Item, medicine)-> write('You see '), write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
-                                            item(Item, armor)-> write('You see '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
-                                            item(Item, weapon)-> write('You see '),(Val == 0->write('an empty ');write('a ')),write(Item),(player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
-                                            item(Item, ammo)-> write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl)
+                                            item(Item, medicine,_)-> write('You see '), write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
+                                            item(Item, armor,_)-> write('You see '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
+                                            item(Item, weapon,_)-> write('You see '),(Val == 0->write('an empty ');write('a ')),write(Item),(player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl);
+                                            item(Item, ammo,_)-> write('You see  '),write(Item), (player_position(Row,Col)->write(' lying on the ground.'),nl;write(' nearby.'),nl)
                                         )
                                     ),!.
 
@@ -561,4 +559,5 @@ init_enemy  :-  assertz(enemy_position(1,1)),
                 assertz(enemy_equipped_weapon(6,5,pistol,1)),
                 assertz(enemy_inventory(6,5,medkit,30)).
 
-
+%generate_enemy(0)   :-  !.
+%generate_enemy(X)   :-  
