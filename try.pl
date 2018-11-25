@@ -112,7 +112,7 @@ value(carrier,10).%24
 %%Mencetak full map
 print_map(12,0) :- nl,nl,!.
 print_map(X,12) :- nl , nl,  NextRow is X+1,!, print_map(NextRow,0).
-print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1,!, print_map(X, NextCol).
+print_map(X,Y) :- tile(X,Y,Tile), print_map_tile(X,Y,Tile), NextCol is Y + 1,!, print_map(X, NextCol).
 
 print_tile(_,_,X) :- X == 'x', ! ,  write('  x  ').
 print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
@@ -126,6 +126,12 @@ print_tile(Row,Col,_) :- (  item_details(Row,Col,Item,_) ->
                                 );
                             write('  _  ')
                          ). 
+
+/*BUAT PRINT PETA, ICONNYA GAK BOLEH KELIATAN*/
+print_map_tile(Row,Col,_)   :- player_position(Row,Col), !, write('  P  ').  
+print_map_tile(_,_,Tile)    :- Tile == 'x', ! ,  write('  x  ').
+print_map_tile(_,_,_)       :- write('  _  '),!.
+                        
 
 load_map(_,_,[]) :- !.
 load_map(X,Y,[Head|Tail]) :- assertz(tile(X,Y,Head)), Y1 is Y + 1, load_map(X,Y1,Tail), ! .
@@ -160,7 +166,7 @@ load_map :- initial_map_r0,
 
 
 
-update_dead_zone :- time(X), mod(X, 5) =:= 0 , Res is div(X, 5) ,!, forall(tile(Row,Col,_), update_limit_dead_zone(Row,Col,Res)),!,nl,nl,write('The storm is coming...'),nl,nl. %karena mulai dari 0
+update_dead_zone :- time(X), mod(X, 7) =:= 0 , Res is div(X, 7) ,!, forall(tile(Row,Col,_), update_limit_dead_zone(Row,Col,Res)),!,nl,nl,write('The storm is coming...'),nl,nl. %karena mulai dari 0
 update_dead_zone :- !.
 
 
@@ -190,10 +196,10 @@ start :-    shell(clear),
 			   ;Command == 'quit' -> quit
 			).
 
-n :-    shell(clear),update_time,update_dead_zone, move_player(n),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
-s :-    shell(clear),update_time,update_dead_zone, move_player(s),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
-e :-    shell(clear),update_time,update_dead_zone, move_player(e),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
-w :-    shell(clear),update_time,update_dead_zone, move_player(w),move_enemies,!, delete_enemies_in_dead_zone,look_nsew,check_game_over.
+n :-    shell(clear),update_time,update_dead_zone, move_player(n),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
+s :-    shell(clear),update_time,update_dead_zone, move_player(s),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
+e :-    shell(clear),update_time,update_dead_zone, move_player(e),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
+w :-    shell(clear),update_time,update_dead_zone, move_player(w),move_enemies,!, delete_enemies_in_dead_zone,add_random_supply,look_nsew,check_game_over.
 
 map:-  shell(clear),print_map(0,0),!.
 
@@ -411,6 +417,14 @@ quit    :- write('Exit the game, see ya next time !'),sleep(2),halt.
 /*FUNGSI-FUNGSI DALAM GAME*/
 update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
 
+add_random_supply   :-  time(X),mod(X,5) =:= 0,
+                        random(3,8,Row),random(3,8,Col),random(1,24,ItemCode),
+                        item(Name,_,ItemCode),
+                        value(Name,Value),
+                        assertz(item_details(Row,Col,Name,Value)),
+                        format('\n\nSupply Incoming !!\n\n',[]),!.
+add_random_supply   :-  !.
+
 is_in_dead_zone :- player_position(X,Y), tile(X,Y,Z), Z == 'x', retractall(player_original_health(_)),assertz(player_original_health(0)).
 is_in_dead_zone :- !.
 
@@ -588,6 +602,42 @@ generate_items(X) :-    random(1,24,I),
                         Next is X - 1,
                         generate_items(Next),!.
 
+
+
+combat_story(PW) :-     (
+                        PW == m416->
+                            write('\n\nYou can hear enemy voices up ahead ..\n'),sleep(2),
+                            write('\nYou send him to his creator with a shot through the heart !'),sleep(2),
+                            write('\nThe sky looks so beatiful now..\n'),sleep(2);
+                        PW == scar->
+                            write('\n\nThe shots heard through the hills..\n'),sleep(2),
+                            write('\nPanting and trying to hold his wounds, your opponent finally fall to the ground..\n'),sleep(2),
+                            write('\nHow long we have to fight in this war?..\n'),sleep(2);
+                        PW == shotgun->
+                            write('\n\nYour enemy\'s guts spread all over the ground\n'),sleep(2),
+                            write('\nYou feel disgusted.. \n'),sleep(2),
+                            write('\nBut you\'re the one who make him like that in the first place..\n'),sleep(2);
+                        PW == sniper->
+                            write('\n\n\'I feel somebody is watching me\',he said..\n'),sleep(2),
+                            write('\nThen he saw a brief light blink from across the hill\n'),sleep(2),
+                            write('\nRealizing what\'s coming, he try to run as fast as possible\n'),sleep(2),
+                            write('\nAlas, his running speed is nothing compared to my bullet flying to his head\n'),sleep(2);
+                        PW == bazooka->
+                            write('\n\nTarget terminated !\n'),sleep(2),
+                            write('\nGod damn it! Is it really necessary to blow him up?\n'),sleep(2);
+                        PW == grenade->
+                            write('\n\n\'Grenade! Take Cover !\',he said \n'),sleep(2),
+                            write('\nBut it was too late, all he can heard was a massive terrifying blast..\n'),sleep(2);
+                        %sisanya
+                            write('\n\nThe fight was bloody and felt so long\n'),sleep(2),
+                            write('\nYou just hope can end this war and leave this hellhole as fast as possible..\n'),sleep(2)
+                        ).
+
+
+
+
+                    
+
 combat  :-  player_position(Row,Col),enemy_position(Row,Col),
                     player_equipped_weapon(PW,Ammo),
                     Ammo > 0,!,
@@ -613,7 +663,9 @@ combat  :-  player_position(Row,Col),enemy_position(Row,Col),
                     retract(enemy_equipped_weapon(Row,Col,EW,EAmmo)),
                     retract(enemy_position(Row,Col)),
                     assertz(item_details(Row,Col,EW,EAmmo)),
-                    forall(enemy_inventory(_,_,_,_),(enemy_inventory(Row,Col,Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Row,Col,Item,Val)))),!.
+                    forall(enemy_inventory(_,_,_,_),(enemy_inventory(Row,Col,Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Row,Col,Item,Val)))),
+                    combat_story(PW),
+                    format('You killed your enemy with ~w ! \n',[PW]),!.
         
 combat  :-  player_position(Row,Col),enemy_position(Row,Col),!,
                     (
@@ -626,7 +678,7 @@ combat  :-  player_position(Row,Col),
                     RowDown is Row + 1,
                     ColLeft is Col - 1,
                     ColRight is Col + 1,
-                    enemy_position(ERow,ECol),!,
+                    enemy_position(ERow,ECol),
                     (
                         ERow == RowUp,ECol == ColLeft;
                         ERow == RowUp,ECol == Col;
@@ -896,7 +948,7 @@ load_facts(FileName)  :-    open(FileName,read,In),
                             load_item_details(IR,IC,IN,IV),
                             read(In,Time),
                             assertz(time(Time)),
-                            close(In),write('Load is success'),!.
+                            close(In),write('File load was successfull\n\n'),write('Hope you survive mate !'),nl,!.
 		
 load_facts(_) :- write('Load Failed. Please try again'),!. 
 
