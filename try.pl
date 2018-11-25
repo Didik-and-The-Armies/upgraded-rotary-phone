@@ -112,7 +112,7 @@ value(carrier,10).%24
 %%Mencetak full map
 print_map(12,0) :- nl,nl,!.
 print_map(X,12) :- nl , nl,  NextRow is X+1,!, print_map(NextRow,0).
-print_map(X,Y) :- tile(X,Y,Tile), print_map_tile(X,Y,Tile), NextCol is Y + 1,!, print_map(X, NextCol).
+print_map(X,Y) :- tile(X,Y,Tile), print_tile(X,Y,Tile), NextCol is Y + 1,!, print_map(X, NextCol).
 
 print_tile(_,_,X) :- X == 'x', ! ,  write('  x  ').
 print_tile(Row,Col,_) :- player_position(Row,Col), ! , write('  P  ').
@@ -320,7 +320,7 @@ drop(Item)  :-  !, nl,
 
 
 %Asumsi kalo ada barang yang lagi diequip langsung ditaro di inventory
-use(Item)   :-  shell(clear),
+use(Item)   :-  %shell(clear),
                 player_inventory(Item,Val),!,
             (
                 item(Item,armor,_)->
@@ -350,6 +350,7 @@ use(Item)   :-  shell(clear),
                     retractall(current_inventory(_)),
                     X3 is X2 - 1,
                     assertz(current_inventory(X3)),
+                    status,
                     !,write(Item),write(' equipped.'),nl
                 ;
                 item(Item,weapon,_)->
@@ -370,7 +371,7 @@ use(Item)   :-  shell(clear),
                     current_inventory(X2),
                     retractall(current_inventory(_)),
                     X3 is X2 - 1,
-                    assertz(current_inventory(X3)),
+                    assertz(current_inventory(X3)),status,
                     !,write(Item),write(' equipped, ready to battle?'),nl
                 ;
                 item(Item,medicine,_)-> heal(Val),
@@ -378,7 +379,7 @@ use(Item)   :-  shell(clear),
                                       current_inventory(C),
                                       retractall(current_inventory(_)),
                                       C1 is C - 1,
-                                      assertz(current_inventory(C1)),
+                                      assertz(current_inventory(C1)), status, 
                                       !,write(Item),write(' used, now you feel better.'),nl
                 ;
                 item(Item,ammo,_) ->retract(player_equipped_weapon(W,B)),
@@ -387,7 +388,7 @@ use(Item)   :-  shell(clear),
                                     current_inventory(X),
                                     retractall(current_inventory(_)),
                                     X1 is X - 1,
-                                    assertz(current_inventory(X1)),
+                                    assertz(current_inventory(X1)), status, 
                                     !,write(Item),write(' used, ready to some shooting?'),nl
                 ;
                 item(Item,bag,_) -> value(Item,Capacity),
@@ -397,7 +398,7 @@ use(Item)   :-  shell(clear),
                                     C1 is C - 1,
                                     assertz(current_inventory(C1)),
                                     retractall(max_inventory(_)),
-                                    assertz(max_inventory(Capacity)),
+                                    assertz(max_inventory(Capacity)), status, 
                                     !,write(Item),write(' equipped, do you feel lighter or heavier ?'),nl
             ).
 use(Item)   :- !, format('No ~w in your inventory.',[Item]),nl.
@@ -412,7 +413,11 @@ save(X)   :-  save_facts(X).
 %load(X)   :-  load_facts(X).
 
 restart :- reset_game,initiliaze_game.
-quit    :- write('Exit the game, see ya next time !'),sleep(2),halt.
+quit    :- write('Loading..\n'),sleep(2),
+           write('See you next time soldier\n'),sleep(2),
+           write('Exiting..\n'),sleep(2),
+            
+           halt.
 
 /*FUNGSI-FUNGSI DALAM GAME*/
 update_time :- time(X), X1 is X+1, retractall(time(_)), assertz(time(X1)).
@@ -663,9 +668,9 @@ combat  :-  player_position(Row,Col),enemy_position(Row,Col),
                     retract(enemy_equipped_weapon(Row,Col,EW,EAmmo)),
                     retract(enemy_position(Row,Col)),
                     assertz(item_details(Row,Col,EW,EAmmo)),
-                    forall(enemy_inventory(_,_,_,_),(enemy_inventory(Row,Col,Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Row,Col,Item,Val)))),
+                    forall(enemy_inventory(Row,Col,_,_),(enemy_inventory(Row,Col,Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Row,Col,Item,Val)))),
                     combat_story(PW),
-                    format('You killed your enemy with ~w ! \n',[PW]),!.
+                    format('\nYou killed your enemy with ~w ! \n',[PW]),!.
         
 combat  :-  player_position(Row,Col),enemy_position(Row,Col),!,
                     (
@@ -875,10 +880,13 @@ save_facts(FileName)  :-  open(FileName,write,Out),
                           write(Out,Time),
                           write(Out,'. '),
                           nl(Out),
-                          close(Out),write('Your data has been saved.'),!.
+                          close(Out),
+                          write('\n Saving your file\n'),sleep(2),
+                          write('\n Finish loading files.. \n'),sleep(2),
+                          write('\nYour data has been saved.\n'),!.
 
 %kalo gak valid
-save_facts(_) :- write('Save is Failed. Please try again'),!.
+save_facts(_) :- write('Saving Failed. Please try again'),!.
 
 /*LOAD*/
 
@@ -948,7 +956,11 @@ load_facts(FileName)  :-    open(FileName,read,In),
                             load_item_details(IR,IC,IN,IV),
                             read(In,Time),
                             assertz(time(Time)),
-                            close(In),write('File load was successfull\n\n'),write('Hope you survive mate !'),nl,!.
+                            close(In),
+                            write('\n Loading your files \n'),sleep(2),
+                            write('\n Dikit lagi libur boss! \n'),sleep(2),
+                            write('\n Load successful, opening game \n'),sleep(1),!.
+
 		
 load_facts(_) :- write('Load Failed. Please try again'),!. 
 
