@@ -699,7 +699,7 @@ combat  :-  player_position(Row,Col),
                     ),
                     write('Can\'t reach the enemy, you need to go closer !'),nl,!.
         
-combat  :- !, write('No enemy in sight.'),nl.
+combat  :- !, write('\nNo enemy in sight.'),nl.
 
 
 
