@@ -23,6 +23,10 @@
 :- dynamic(enemy_position/2).
 :- dynamic(enemy_inventory/4). 
 :- dynamic(enemy_equipped_weapon/4). %posisi,Nama dan sisa peluru
+
+:- dynamic(temp_enemy_position/2).
+:- dynamic(temp_enemy_inventory/4). 
+:- dynamic(temp_enemy_equipped_weapon/4). %posisi,Nama dan sisa peluru
 %Musuh sekali attack langsung modar sementara, dan gapake armor
 :- dynamic(player_equipped_weapon/1).
 :- dynamic(item_details/4). %Koordinat baris kolom, nama item sama isinya 
@@ -67,17 +71,6 @@ item(medkit,medicine,15).
 item(magazine,ammo,16).
 
 %Fakta kepasitias peluru setiap senjata
-ammo(m416,7).
-ammo(scar,7).
-ammo(akm,7).
-ammo(ump9,5).
-ammo(shotgun,5).
-ammo(sks,8).
-ammo(pistol,10).
-ammo(sniper,3).
-ammo(bazooka,1).
-ammo(grenade,1).
-
 damage(m416,30).
 damage(scar,35).
 damage(akm,30).
@@ -86,15 +79,29 @@ damage(shotgun,40).
 damage(sks,25).
 damage(pistol,15).
 damage(sniper,80).
-damage(bazooka,100).
+damage(bazooka,99).
 damage(grenade,70).
 
-protection(helm,10).
-protection(kevlar,20).
-protection(spetnaz,40).
+value(m416,7).
+value(scar,7).
+value(akm,7).
+value(ump9,5).
+value(shotgun,5).
+value(sks,8).
+value(pistol,10).
+value(sniper,3).
+value(bazooka,1).
+value(grenade,1).
 
-heal_capacity(bandage,15).
-heal_capacity(medkit,30).
+
+value(helm,10).
+value(kevlar,20).
+value(spetnaz,40).
+
+value(bandage,15).
+value(medkit,30).
+
+value(magazine,5).
 
 %%Mencetak full map
 print_map(12,0) :- nl,nl,!.
@@ -167,10 +174,10 @@ move_player(Direction) :-   Direction == 'w' -> !, is_enemy_attack,player_positi
 
 /*DAFTAR IMPLEMENTASI COMMAND YANG DIINPUT PEMAIN*/
 
-n :-    shell(clear),update_time,update_dead_zone, move_player(n),!, delete_enemies_in_dead_zone, /*map*/look_nsew.
-s :-    shell(clear),update_time,update_dead_zone, move_player(s),!, delete_enemies_in_dead_zone,/*map*/look_nsew.
-e :-    shell(clear),update_time,update_dead_zone, move_player(e),!, delete_enemies_in_dead_zone,/*map*/look_nsew.
-w :-    shell(clear),update_time,update_dead_zone, move_player(w),!, delete_enemies_in_dead_zone,/*map*/look_nsew.
+n :-    shell(clear),update_time,update_dead_zone, move_player(n),move_enemies,!, delete_enemies_in_dead_zone,map,look_nsew.
+s :-    shell(clear),update_time,update_dead_zone, move_player(s),move_enemies,!, delete_enemies_in_dead_zone,map,look_nsew.
+e :-    shell(clear),update_time,update_dead_zone, move_player(e),move_enemies,!, delete_enemies_in_dead_zone,map,look_nsew.
+w :-    shell(clear),update_time,update_dead_zone, move_player(w),move_enemies,!, delete_enemies_in_dead_zone,map,look_nsew.
 
 map:-  shell(clear),print_map(0,0),!.
 
@@ -383,8 +390,7 @@ use(Item)   :- !, format('No ~w in your inventory.',[Item]),nl.
 attack  :-  player_position(Row,Col),enemy_position(Row,Col),
             player_equipped_weapon(PW,Ammo),
             Ammo > 0,!,
-            enemy_equipped_weapon(_,_,EW,_),
-            damage(PW,_),
+            enemy_equipped_weapon(Row,Col,EW,EAmmo),
             damage(EW,ED),
             player_total_health(TH),player_armor_health(AA),player_original_health(OA),
             retractall(player_total_health(_)),retractall(player_armor_health(_)),retractall(player_original_health(_)),
@@ -403,10 +409,9 @@ attack  :-  player_position(Row,Col),enemy_position(Row,Col),
             retractall(player_equipped_weapon(_,_)),
             AfterAmmo is Ammo - 1,
             assertz(player_equipped_weapon(PW,AfterAmmo)),
-            retract(enemy_equipped_weapon(Row,Col,_,_)),
+            retract(enemy_equipped_weapon(Row,Col,EW,EAmmo)),
             retract(enemy_position(Row,Col)),
-            damage(EW,AfterEAmmo),
-            assertz(item_details(Row,Col,EW,AfterEAmmo)),
+            assertz(item_details(Row,Col,EW,EAmmo)),
             forall(enemy_inventory(_,_,_,_),(enemy_inventory(Row,Col,Item,Val),assertz(item_details(Row,Col,Item,Val)),retract(enemy_inventory(Row,Col,Item,Val)))),!.
 
 attack  :-  player_position(Row,Col),enemy_position(Row,Col),!,
@@ -531,7 +536,8 @@ heal(X) :-  player_original_health(S),
             assertz(player_total_health(T)),!.
 
 /*INISIALISASI*/
-init_player :-  assertz(player_position(5,5)),
+init_player :-  random(1,10,Row),random(1,10,Col),
+                assertz(player_position(Row,Col)),
                 assertz(player_total_health(75)),
                 assertz(player_original_health(75)),
                 assertz(player_armor_health(0)).
@@ -539,25 +545,93 @@ init_player :-  assertz(player_position(5,5)),
                 
 
 
-init_item   :-  assertz(item_details(1,1,grenade,1)),
-                assertz(item_details(3,8,bandage,30)),
-                assertz(item_details(4,9,magazine,5)),
-                assertz(item_details(5,5,sks,7)),
-                assertz(item_details(5,5,m416,7)),
-                assertz(item_details(5,5,sks,7)),
-                assertz(item_details(5,5,spetnaz,40)),
-                assertz(item_details(5,5,bandage,30)).
+init_item   :-  random(1,11,ItemNumber),generate_items(ItemNumber).
 
-init_enemy  :-  assertz(enemy_position(1,1)),
-                assertz(enemy_equipped_weapon(1,1,bazooka,1)),
-                assertz(enemy_inventory(1,1,spetnaz,30)),
-                assertz(enemy_position(6,5)),
-                assertz(enemy_equipped_weapon(6,5,sks,5)),
-                assertz(enemy_inventory(6,5,bandage,30)),
-                assertz(enemy_inventory(6,5,bandage,30)),
-                assertz(enemy_position(6,5)),
-                assertz(enemy_equipped_weapon(6,5,pistol,1)),
-                assertz(enemy_inventory(6,5,medkit,30)).
+init_enemy  :-  random(1,11,EnemyNumber),generate_enemy(EnemyNumber).
 
-%generate_enemy(0)   :-  !.
-%generate_enemy(X)   :-  
+move_enemies :- time(X), mod(X,3) =:= 0, enemy_position(_,_),!,
+                random(1,5,D),!,
+                move_enemies_direction(D),
+                move_enemies.
+move_enemies :- temp_enemy_position(_,_),!,
+                set_back_temp,!.
+move_enemies :- !.
+
+
+move_enemies_direction(D)   :-  /*utara*/D == 1,!,
+                                enemy_position(Row,Col),
+                                Row1 is Row - 1,
+                                retract(enemy_position(Row,Col)),
+                                retract(enemy_equipped_weapon(Row,Col,EA,EV)),
+                                retract(enemy_inventory(Row,Col,EI,IV)), 
+                                assertz(temp_enemy_position(Row1,Col)),
+                                assertz(temp_enemy_equipped_weapon(Row1,Col,EA,EV)),
+                                assertz(temp_enemy_inventory(Row1,Col,EI,IV)).
+
+move_enemies_direction(D)   :-  /*selatan*/D == 2,!,
+                                enemy_position(Row,Col),
+                                Row1 is Row + 1,
+                                retract(enemy_position(Row,Col)),
+                                retract(enemy_equipped_weapon(Row,Col,EA,EV)),
+                                retract(enemy_inventory(Row,Col,EI,IV)), 
+                                assertz(temp_enemy_position(Row1,Col)),
+                                assertz(temp_enemy_equipped_weapon(Row1,Col,EA,EV)),
+                                assertz(temp_enemy_inventory(Row1,Col,EI,IV)).
+
+move_enemies_direction(D)   :-  /*barat*/D == 3, !,
+                                enemy_position(Row,Col),
+                                Col1 is Col - 1,
+                                retract(enemy_position(Row,Col)),
+                                retract(enemy_equipped_weapon(Row,Col,EA,EV)),
+                                retract(enemy_inventory(Row,Col,EI,IV)), 
+                                assertz(temp_enemy_position(Row,Col1)),
+                                assertz(temp_enemy_equipped_weapon(Row,Col1,EA,EV)),
+                                assertz(temp_enemy_inventory(Row,Col1,EI,IV)).
+
+move_enemies_direction(D)   :-  /*timur*/D == 4, !,
+                                enemy_position(Row,Col),
+                                Col1 is Col + 1,
+                                retract(enemy_position(Row,Col)),
+                                retract(enemy_equipped_weapon(Row,Col,EA,EV)),
+                                retract(enemy_inventory(Row,Col,EI,IV)), 
+                                assertz(temp_enemy_position(Row,Col1)),
+                                assertz(temp_enemy_equipped_weapon(Row,Col1,EA,EV)),
+                                assertz(temp_enemy_inventory(Row,Col1,EI,IV)).
+
+
+set_back_temp :- temp_enemy_position(Row,Col),!,
+                 temp_enemy_equipped_weapon(Row,Col,EW,EA),
+                 temp_enemy_inventory(Row,Col,EI,EV),
+                 retract(temp_enemy_position(Row,Col)),
+                 retract(temp_enemy_equipped_weapon(Row,Col,EW,EA)),
+                 retract(temp_enemy_inventory(Row,Col,EI,EV)),
+                 assertz(enemy_position(Row,Col)),
+                 assertz(enemy_equipped_weapon(Row,Col,EW,EA)),
+                 assertz(enemy_inventory(Row,Col,EI,EV)),
+                 set_back_temp.
+set_back_temp :- !.
+
+
+
+generate_enemy(0)   :-  !.
+generate_enemy(X)   :-  random(1,10,ERow),random(1,10,ECol), %set posisi
+                        assertz(enemy_position(ERow,ECol)),
+                        random(1,11,WeaponCode),%set senjata
+                        item(WeaponName,_,WeaponCode),
+                        random(1,4,EA), %set peluru
+                        assertz(enemy_equipped_weapon(ERow,ECol,WeaponName,EA)),
+                        random(1, 17, EI), %set isi inventori
+                        item(ItemName,_,EI),
+                        value(ItemName,Val),
+                        assertz(enemy_inventory(ERow,ECol,ItemName,Val)),
+                        Next is X - 1,
+                        generate_enemy(Next),!.
+
+generate_items(0) :-    !.
+generate_items(X) :-    random(1,17,I),
+                        item(Name,_,I),
+                        value(Name,Val),
+                        random(1,10,Row),random(1,10,Col),
+                        assertz(item_details(Row,Col,Name,Val)),
+                        Next is X - 1,
+                        generate_items(Next),!.
