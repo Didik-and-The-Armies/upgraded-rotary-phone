@@ -191,7 +191,7 @@ start :-    /*shell(clear),*/
             write('What do you wanna do ? [new/load/quit] \n'),
 			read(Command),
 			(
-				Command == 'load' -> write('Input the file name\nFilename : '),nl ,read(FileName) , load_facts(FileName), nl, nl, help
+				Command == 'load' -> write('Input the file name\nFilename : '),nl ,read(FileName) ,reset_game, load_facts(FileName), nl, nl, help
 			   ;Command == 'new' -> initiliaze_game, nl, nl
 			   ;Command == 'quit' -> quit
 			).
