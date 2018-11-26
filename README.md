@@ -11,9 +11,9 @@ By Daniel Diaz
 Copyright (C) 1999-2013 Daniel Diaz
 | ?- 
 ```
-- Compile ```main.pl```.
+- Compile ```try.pl```.
 ```
-| ?- [main].
+| ?- [try].
 compiling /home/USER/.../main.pl for byte code...
 /home/USER/.../main.pl compiled, 134 lines read - 15691 bytes written, 18 ms
 
@@ -57,12 +57,16 @@ O = ammo	X = inaccessible
 ```
 
 Have Fun!
-
+```
 CREDITS 
 
 Created by :
 
 Abda Shaffan Diva 13517021
+
 Didik Supriadi 13517069
+
 Juniardi Akbar 13517075
+
 M. Hendry Prasetya 13517105
+```
