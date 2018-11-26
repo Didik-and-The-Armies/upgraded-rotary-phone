@@ -11,9 +11,9 @@ By Daniel Diaz
 Copyright (C) 1999-2013 Daniel Diaz
 | ?- 
 ```
-- Compile ```main.pl```.
+- Compile ```try.pl```.
 ```
-| ?- [main].
+| ?- [try].
 compiling /home/USER/.../main.pl for byte code...
 /home/USER/.../main.pl compiled, 134 lines read - 15691 bytes written, 18 ms
 
